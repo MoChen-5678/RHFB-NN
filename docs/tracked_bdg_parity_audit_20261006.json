@@ -1,0 +1,544 @@
+{
+  "conclusion": "All saved tracked mu projectors have even number parity (+1), while the block-2 canonical seed is odd (-1). The object's fermion_parity field did not enforce this invariant.",
+  "diagnostic": "dpl_rhf.rhfb.parity_diagnostic.number_parity_from_density",
+  "outer_round_states": [
+    {
+      "fermion_parity_metadata": -1,
+      "iteration": 0,
+      "number": 2.9997909629352844,
+      "state_parity": {
+        "chi_antisymmetry_error": 5.385377523810082e-15,
+        "dimension": 8,
+        "hermiticity_error": 7.616073932671454e-15,
+        "majorana_reality_error": 2.024806447457043e-16,
+        "majorana_skew_error": 1.524367202023462e-14,
+        "normalized_pfaffian": 1.0000000000000013,
+        "number_parity": 1,
+        "particle_number": 2.9997909629352844,
+        "purity_error": 2.9568654627603457e-15
+      }
+    }
+  ],
+  "saved_continuation_states": [
+    {
+      "history_index": 0,
+      "mu": 0.04999999999999999,
+      "overlap_label_min": 0.7136257153675982,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.4409817222947938e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.4520694571741336e-15,
+        "majorana_reality_error": 1.9559371837992172e-16,
+        "majorana_skew_error": 6.9932728646445066e-15,
+        "normalized_pfaffian": 0.999999999999997,
+        "number_parity": 1,
+        "particle_number": 3.072752368772327,
+        "purity_error": 1.594389522940822e-15
+      }
+    },
+    {
+      "history_index": 1,
+      "mu": -0.35000000000000003,
+      "overlap_label_min": 0.925671758759411,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 3.442109701508103e-15,
+        "dimension": 8,
+        "hermiticity_error": 4.867878223048765e-15,
+        "majorana_reality_error": 1.352455077054782e-16,
+        "majorana_skew_error": 9.68792353888133e-15,
+        "normalized_pfaffian": 0.9999999999999982,
+        "number_parity": 1,
+        "particle_number": 3.4000061603477505,
+        "purity_error": 1.8279716955496074e-15
+      }
+    },
+    {
+      "history_index": 2,
+      "mu": -0.75,
+      "overlap_label_min": 0.9832087341556459,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.642515482638533e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.7370812343282985e-15,
+        "majorana_reality_error": 1.7717372231950515e-16,
+        "majorana_skew_error": 7.430563174851996e-15,
+        "normalized_pfaffian": 0.9999999999999977,
+        "number_parity": 1,
+        "particle_number": 3.629820874001584,
+        "purity_error": 1.541036599180768e-15
+      }
+    },
+    {
+      "history_index": 3,
+      "mu": -1.1500000000000001,
+      "overlap_label_min": 0.9882343359408758,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.7831291077300868e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.93593892998722e-15,
+        "majorana_reality_error": 1.8668007690280576e-16,
+        "majorana_skew_error": 7.87953719473102e-15,
+        "normalized_pfaffian": 1.0000000000000013,
+        "number_parity": 1,
+        "particle_number": 3.7699540911619973,
+        "purity_error": 2.272777406834449e-15
+      }
+    },
+    {
+      "history_index": 4,
+      "mu": -1.55,
+      "overlap_label_min": 0.988726550228028,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 8.442988802286502e-15,
+        "dimension": 8,
+        "hermiticity_error": 1.1940189271157746e-14,
+        "majorana_reality_error": 1.7238936392599757e-16,
+        "majorana_skew_error": 2.3930222528285624e-14,
+        "normalized_pfaffian": 0.9999999999999969,
+        "number_parity": 1,
+        "particle_number": 3.8534036534757954,
+        "purity_error": 5.701097476159433e-15
+      }
+    },
+    {
+      "history_index": 5,
+      "mu": 0.8500000000000001,
+      "overlap_label_min": 0.9803935195766622,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.4129877793643428e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.412480043417591e-15,
+        "majorana_reality_error": 1.6011191368055988e-16,
+        "majorana_skew_error": 6.9046103537707535e-15,
+        "normalized_pfaffian": 1.0000000000000022,
+        "number_parity": 1,
+        "particle_number": 2.4541280789944553,
+        "purity_error": 2.5338220288377068e-15
+      }
+    },
+    {
+      "history_index": 6,
+      "mu": 1.25,
+      "overlap_label_min": 0.989826394592864,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.589894651035909e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.662664140612517e-15,
+        "majorana_reality_error": 2.022033111165906e-16,
+        "majorana_skew_error": 7.287901917823409e-15,
+        "normalized_pfaffian": 0.9999999999999971,
+        "number_parity": 1,
+        "particle_number": 2.2841629158557817,
+        "purity_error": 2.691571253822137e-15
+      }
+    },
+    {
+      "history_index": 7,
+      "mu": 1.65,
+      "overlap_label_min": 0.9924397551205538,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 3.26144245685072e-15,
+        "dimension": 8,
+        "hermiticity_error": 4.612376155377716e-15,
+        "majorana_reality_error": 1.8913719635751394e-16,
+        "majorana_skew_error": 9.244787966572203e-15,
+        "normalized_pfaffian": 0.9999999999999986,
+        "number_parity": 1,
+        "particle_number": 2.1832096278900996,
+        "purity_error": 2.112692522826813e-15
+      }
+    },
+    {
+      "history_index": 8,
+      "mu": 2.0500000000000003,
+      "overlap_label_min": 0.9919664129174293,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 4.8778092744437675e-15,
+        "dimension": 8,
+        "hermiticity_error": 6.898264030587643e-15,
+        "majorana_reality_error": 1.7132346802473083e-16,
+        "majorana_skew_error": 1.3811095905213337e-14,
+        "normalized_pfaffian": 0.9999999999999981,
+        "number_parity": 1,
+        "particle_number": 2.122082159997763,
+        "purity_error": 3.957523742482838e-15
+      }
+    },
+    {
+      "history_index": 9,
+      "mu": 2.45,
+      "overlap_label_min": 0.9904636846643974,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 4.159145014662984e-15,
+        "dimension": 8,
+        "hermiticity_error": 5.8819192876128375e-15,
+        "majorana_reality_error": 1.9847840010441268e-16,
+        "majorana_skew_error": 1.1803489162321378e-14,
+        "normalized_pfaffian": 0.999999999999999,
+        "number_parity": 1,
+        "particle_number": 2.0834148093230214,
+        "purity_error": 2.847505098870765e-15
+      }
+    },
+    {
+      "history_index": 10,
+      "mu": -1.15,
+      "overlap_label_min": 0.9887265502280284,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 3.3793752393228207e-15,
+        "dimension": 8,
+        "hermiticity_error": 4.7791582957981565e-15,
+        "majorana_reality_error": 1.6010370564215023e-16,
+        "majorana_skew_error": 9.566902210895149e-15,
+        "normalized_pfaffian": 1.0000000000000022,
+        "number_parity": 1,
+        "particle_number": 3.7699540911619978,
+        "purity_error": 2.352740006699048e-15
+      }
+    },
+    {
+      "history_index": 11,
+      "mu": -0.75,
+      "overlap_label_min": 0.9882343359408756,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.642515482638533e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.7370812343282985e-15,
+        "majorana_reality_error": 1.7717372231950515e-16,
+        "majorana_skew_error": 7.430563174851996e-15,
+        "normalized_pfaffian": 0.9999999999999977,
+        "number_parity": 1,
+        "particle_number": 3.629820874001584,
+        "purity_error": 1.541036599180768e-15
+      }
+    },
+    {
+      "history_index": 12,
+      "mu": -0.3500000000000001,
+      "overlap_label_min": 0.9832087341556457,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 3.3269275800232866e-15,
+        "dimension": 8,
+        "hermiticity_error": 4.704986104702032e-15,
+        "majorana_reality_error": 1.729404513712743e-16,
+        "majorana_skew_error": 9.420819858444439e-15,
+        "normalized_pfaffian": 1.000000000000001,
+        "number_parity": 1,
+        "particle_number": 3.4000061603477505,
+        "purity_error": 2.82779211971773e-15
+      }
+    },
+    {
+      "history_index": 13,
+      "mu": 0.050000000000000044,
+      "overlap_label_min": 0.925671758759411,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 7.93955049083267e-15,
+        "dimension": 8,
+        "hermiticity_error": 1.1228219983281526e-14,
+        "majorana_reality_error": 1.9678693486313904e-16,
+        "majorana_skew_error": 2.2521062462154476e-14,
+        "normalized_pfaffian": 0.9999999999999973,
+        "number_parity": 1,
+        "particle_number": 3.0727523687723295,
+        "purity_error": 2.574919180908636e-15
+      }
+    },
+    {
+      "history_index": 14,
+      "mu": 0.44999999999999996,
+      "overlap_label_min": 0.7136257153675986,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 3.863434094831664e-15,
+        "dimension": 8,
+        "hermiticity_error": 5.463720894245562e-15,
+        "majorana_reality_error": 2.0127114181718866e-16,
+        "majorana_skew_error": 1.0955783772884378e-14,
+        "normalized_pfaffian": 1.0000000000000084,
+        "number_parity": 1,
+        "particle_number": 2.7236631036339443,
+        "purity_error": 4.66893626753361e-15
+      }
+    },
+    {
+      "history_index": 15,
+      "mu": -1.05,
+      "overlap_label_min": 0.9824705039947083,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.7936446295818088e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.9508101236053554e-15,
+        "majorana_reality_error": 1.552667430077429e-16,
+        "majorana_skew_error": 7.906981243215486e-15,
+        "normalized_pfaffian": 0.999999999999998,
+        "number_parity": 1,
+        "particle_number": 3.7414537453349013,
+        "purity_error": 2.3213595162296575e-15
+      }
+    },
+    {
+      "history_index": 16,
+      "mu": -0.55,
+      "overlap_label_min": 0.9798798967566316,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.8223349386710145e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.9913843478279865e-15,
+        "majorana_reality_error": 1.6692913284827964e-16,
+        "majorana_skew_error": 7.97609157123765e-15,
+        "normalized_pfaffian": 1.0000000000000022,
+        "number_parity": 1,
+        "particle_number": 3.5279840930371362,
+        "purity_error": 2.3387815738776685e-15
+      }
+    },
+    {
+      "history_index": 17,
+      "mu": -0.050000000000000044,
+      "overlap_label_min": 0.962372687235179,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 5.657536441700551e-15,
+        "dimension": 8,
+        "hermiticity_error": 8.00096476547294e-15,
+        "majorana_reality_error": 2.128939862722808e-16,
+        "majorana_skew_error": 1.601178017107209e-14,
+        "normalized_pfaffian": 0.999999999999999,
+        "number_parity": 1,
+        "particle_number": 3.1611283771261327,
+        "purity_error": 1.7058845879189614e-15
+      }
+    },
+    {
+      "history_index": 18,
+      "mu": 0.19999999999999996,
+      "overlap_label_min": 0.8074134797333281,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 3.7751240672381e-15,
+        "dimension": 8,
+        "hermiticity_error": 5.338831655529201e-15,
+        "majorana_reality_error": 1.6628157222782344e-16,
+        "majorana_skew_error": 1.0612103924547728e-14,
+        "normalized_pfaffian": 1.000000000000002,
+        "number_parity": 1,
+        "particle_number": 2.937900142214927,
+        "purity_error": 2.064120189264862e-15
+      }
+    },
+    {
+      "history_index": 19,
+      "mu": 0.07499999999999996,
+      "overlap_label_min": 0.9685377092567761,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 6.456344696499626e-15,
+        "dimension": 8,
+        "hermiticity_error": 9.130650233145376e-15,
+        "majorana_reality_error": 1.5946264304881613e-16,
+        "majorana_skew_error": 1.8263274143433523e-14,
+        "normalized_pfaffian": 0.999999999999994,
+        "number_parity": 1,
+        "particle_number": 3.050335455356397,
+        "purity_error": 2.031409035466181e-15
+      }
+    },
+    {
+      "history_index": 20,
+      "mu": 0.13749999999999996,
+      "overlap_label_min": 0.981787366731293,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 4.074057212364067e-15,
+        "dimension": 8,
+        "hermiticity_error": 5.761586963609189e-15,
+        "majorana_reality_error": 1.879931302432804e-16,
+        "majorana_skew_error": 1.1522219701214311e-14,
+        "normalized_pfaffian": 1.000000000000003,
+        "number_parity": 1,
+        "particle_number": 2.9940723637523616,
+        "purity_error": 2.607766536967987e-15
+      }
+    },
+    {
+      "history_index": 21,
+      "mu": 0.10624999999999996,
+      "overlap_label_min": 0.9957473528615067,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 5.2989865870573315e-15,
+        "dimension": 8,
+        "hermiticity_error": 7.493898698249597e-15,
+        "majorana_reality_error": 1.9116153809976023e-16,
+        "majorana_skew_error": 1.499889316970676e-14,
+        "normalized_pfaffian": 1.0000000000000004,
+        "number_parity": 1,
+        "particle_number": 3.0222243619873126,
+        "purity_error": 2.9628266850864906e-15
+      }
+    },
+    {
+      "history_index": 22,
+      "mu": 0.12187499999999996,
+      "overlap_label_min": 0.9987978437219274,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 5.311509334471589e-15,
+        "dimension": 8,
+        "hermiticity_error": 7.511608537481013e-15,
+        "majorana_reality_error": 2.0066103737132907e-16,
+        "majorana_skew_error": 1.4953866985988704e-14,
+        "normalized_pfaffian": 1.0000000000000002,
+        "number_parity": 1,
+        "particle_number": 3.008149498496156,
+        "purity_error": 1.8337516949320897e-15
+      }
+    },
+    {
+      "history_index": 23,
+      "mu": 0.12968749999999996,
+      "overlap_label_min": 0.9996902407098412,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 2.395208051908019e-15,
+        "dimension": 8,
+        "hermiticity_error": 3.387335711713561e-15,
+        "majorana_reality_error": 2.0246709098946327e-16,
+        "majorana_skew_error": 6.771654492299267e-15,
+        "normalized_pfaffian": 1.000000000000001,
+        "number_parity": 1,
+        "particle_number": 3.0011107168301274,
+        "purity_error": 2.169831858335937e-15
+      }
+    },
+    {
+      "history_index": 24,
+      "mu": 0.13359374999999996,
+      "overlap_label_min": 0.999922054517197,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 7.967786344173209e-15,
+        "dimension": 8,
+        "hermiticity_error": 1.1268151510020894e-14,
+        "majorana_reality_error": 2.1313452986223042e-16,
+        "majorana_skew_error": 2.2556501380667455e-14,
+        "normalized_pfaffian": 1.0000000000000002,
+        "number_parity": 1,
+        "particle_number": 2.997591424437016,
+        "purity_error": 2.2720110017118734e-15
+      }
+    },
+    {
+      "history_index": 25,
+      "mu": 0.13164062499999996,
+      "overlap_label_min": 0.9999805243314268,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 6.5044757078409425e-15,
+        "dimension": 8,
+        "hermiticity_error": 9.198717762154998e-15,
+        "majorana_reality_error": 1.7687301774673116e-16,
+        "majorana_skew_error": 1.8437546772593314e-14,
+        "normalized_pfaffian": 0.999999999999993,
+        "number_parity": 1,
+        "particle_number": 2.999351049454227,
+        "purity_error": 2.5502246972886853e-15
+      }
+    },
+    {
+      "history_index": 26,
+      "mu": 0.13066406249999996,
+      "overlap_label_min": 0.9999951328125273,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 3.2127200777350406e-15,
+        "dimension": 8,
+        "hermiticity_error": 4.543472306041239e-15,
+        "majorana_reality_error": 2.0588285636692551e-16,
+        "majorana_skew_error": 9.09976672531051e-15,
+        "normalized_pfaffian": 0.9999999999999978,
+        "number_parity": 1,
+        "particle_number": 3.0002308788204797,
+        "purity_error": 2.1018663730312906e-15
+      }
+    },
+    {
+      "history_index": 27,
+      "mu": 0.13115234374999996,
+      "overlap_label_min": 0.9999987825254846,
+      "ph_pattern": "+-+-++",
+      "phase": "mu_continue",
+      "state_parity": {
+        "chi_antisymmetry_error": 5.385377523810082e-15,
+        "dimension": 8,
+        "hermiticity_error": 7.616073932671454e-15,
+        "majorana_reality_error": 2.024806447457043e-16,
+        "majorana_skew_error": 1.524367202023462e-14,
+        "normalized_pfaffian": 1.0000000000000013,
+        "number_parity": 1,
+        "particle_number": 2.9997909629352844,
+        "purity_error": 2.9568654627603457e-15
+      }
+    }
+  ],
+  "schema": "tracked-bdg-parity-audit-v1",
+  "seed": {
+    "chi_antisymmetry_error": 0.0,
+    "dimension": 6,
+    "hermiticity_error": 0.0,
+    "majorana_reality_error": 7.404131437652325e-17,
+    "majorana_skew_error": 1.3442455307935285e-16,
+    "normalized_pfaffian": -0.9999999999999978,
+    "number_parity": -1,
+    "particle_number": 2.976760142974613,
+    "purity_error": 4.937840934653769e-16
+  },
+  "seed_reconstruction": "make_projected_fixedpoint_problem(blocked_index=2) then _active_from_coordinates(initial_pair_coordinates(problem))",
+  "source_retry_artifact": "docs/tracked_bdg_reference_retry_20261006.json",
+  "source_sha256": "af09285eccd5b02c634047982a649eec85fd444b3b4031a8441e6773346532c7",
+  "source_snapshot": "outputs/validation/tracked_bdg_parity_fix_20261006/source_snapshot/tracked_bdg_reference.py"
+}

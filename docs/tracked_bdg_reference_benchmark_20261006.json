@@ -1,0 +1,1110 @@
+{
+  "attempt_audit": {
+    "bounded_run_attempts": 1,
+    "branch_continuity": "recorded min label overlap over all samples is at least 0.714; PH selection margins and BdG gaps are in history.",
+    "eigensolver_counter_note": "The runtime wrapper used the wrong torch.linalg attribute names, so saved measured zeros are invalid. Exact source/control-flow reconstruction for this failed path is 13 torch.linalg.eigh calls (one initial pure-projector frame extraction, one positive-h projector, one anchor BdG solve, ten \u03bc continuation BdG solves), and 0 torch.linalg.eigvalsh/eig calls. These are reconstructed counts, not instrumented counts.",
+    "eigensolver_counter_valid": false,
+    "number_samples_mu_N": [
+      [
+        0.04999999999999999,
+        3.0727523687723264
+      ],
+      [
+        -0.35000000000000003,
+        3.400006160347751
+      ],
+      [
+        -0.75,
+        3.6298208740015845
+      ],
+      [
+        -1.1500000000000001,
+        3.769954091161997
+      ],
+      [
+        -1.55,
+        3.8534036534757954
+      ],
+      [
+        0.8500000000000001,
+        2.4541280789944557
+      ],
+      [
+        1.25,
+        2.2841629158557817
+      ],
+      [
+        1.65,
+        2.183209627890099
+      ],
+      [
+        2.0500000000000003,
+        2.122082159997763
+      ],
+      [
+        2.45,
+        2.0834148093230214
+      ]
+    ],
+    "post_attempt_code_correction": "The implementation now accepts either increasing or decreasing sampled N(mu), rejects only observed reversals/flat curves, and serializes each tracked state/field. No rerun was made, so these fixes have test coverage but no benchmark result.",
+    "result_interpretation": "unaccepted: the original run stopped before the first outer update because its initial guard incorrectly demanded N(mu) increase. The recorded 10 continuation samples are strictly decreasing with mu and show a number bracket around N=3; the algorithm has since been corrected to accept either monotone orientation, but the single allowed run was not repeated.",
+    "saved_state_limit": "The attempt failed during \u03bc-bracket validation before producing an accepted outer state. The artifact retains the full branch metrics and N(mu) continuation samples; full matrix state serialization was added after this attempt and therefore is unavailable for these historical samples."
+  },
+  "eig_counts": {
+    "torch.linalg.eig": 0,
+    "torch.linalg.eigh": 0,
+    "torch.linalg.eigvalsh": 0
+  },
+  "final": null,
+  "history": [
+    {
+      "assignment_margin": 0.009605808334397429,
+      "bdg_gap": 0.13386783969635108,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.7164522967187734,
+      "energy": 0.5679792139685036,
+      "mean_assignment_overlap": 0.8030815125401797,
+      "minimum_label_overlap": 0.7136257153675982,
+      "minimum_ph_selection_margin": 0.9401347377970857,
+      "mu": 0.04999999999999999,
+      "number": 3.0727523687723264,
+      "pair_diagnostics": [
+        {
+          "E_negative": -0.13386783969635174,
+          "E_positive": 0.13386783969635108,
+          "prior_projector_overlap_negative": 0.0034420558966458572,
+          "prior_projector_overlap_positive": 0.9965579441033542,
+          "selection_margin": 0.9931158882067084
+        },
+        {
+          "E_negative": -0.21650794869157786,
+          "E_positive": 0.21650794869157772,
+          "prior_projector_overlap_negative": 0.996217883453596,
+          "prior_projector_overlap_positive": 0.003782116546404123,
+          "selection_margin": 0.9924357669071918
+        },
+        {
+          "E_negative": -0.7196305762365091,
+          "E_positive": 0.71963057623651,
+          "prior_projector_overlap_negative": 0.0071486229803057345,
+          "prior_projector_overlap_positive": 0.9928513770196943,
+          "selection_margin": 0.9857027540393886
+        },
+        {
+          "E_negative": -0.835233485538465,
+          "E_positive": 0.8352334855384652,
+          "prior_projector_overlap_negative": 0.9933686688348482,
+          "prior_projector_overlap_positive": 0.006631331165152754,
+          "selection_margin": 0.9867373376696954
+        },
+        {
+          "E_negative": -1.1320843283825122,
+          "E_positive": 1.1320843283825124,
+          "prior_projector_overlap_negative": 0.029932631101457392,
+          "prior_projector_overlap_positive": 0.9700673688985431,
+          "selection_margin": 0.9401347377970857
+        },
+        {
+          "E_negative": -1.187925548726904,
+          "E_positive": 1.1879255487269043,
+          "prior_projector_overlap_negative": 0.029801825571806127,
+          "prior_projector_overlap_positive": 0.9701981744281925,
+          "selection_margin": 0.9403963488563863
+        }
+      ],
+      "particle_number": 3.0727523687723264,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 1.8011940729455487e-15,
+      "round": 0,
+      "side": "left"
+    },
+    {
+      "assignment_margin": 0.24207385290405167,
+      "bdg_gap": 0.46467982107813227,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.9287078021453739,
+      "energy": 0.5788584126582821,
+      "mean_assignment_overlap": 0.9227864825390619,
+      "minimum_label_overlap": 0.925671758759411,
+      "minimum_ph_selection_margin": 0.94441037958817,
+      "mu": -0.35000000000000003,
+      "number": 3.400006160347751,
+      "pair_diagnostics": [
+        {
+          "E_negative": -0.46467982107813227,
+          "E_positive": 0.4646798210781325,
+          "prior_projector_overlap_negative": 0.0018806585552287721,
+          "prior_projector_overlap_positive": 0.9981193414447705,
+          "selection_margin": 0.9962386828895418
+        },
+        {
+          "E_negative": -0.5395303818804114,
+          "E_positive": 0.5395303818804111,
+          "prior_projector_overlap_negative": 0.9932035265855692,
+          "prior_projector_overlap_positive": 0.006796473414430955,
+          "selection_margin": 0.9864070531711383
+        },
+        {
+          "E_negative": -0.8462190659362129,
+          "E_positive": 0.846219065936213,
+          "prior_projector_overlap_negative": 0.008276211211643056,
+          "prior_projector_overlap_positive": 0.9917237887883565,
+          "selection_margin": 0.9834475775767135
+        },
+        {
+          "E_negative": -0.9653510140779545,
+          "E_positive": 0.9653510140779542,
+          "prior_projector_overlap_negative": 0.9945401914248888,
+          "prior_projector_overlap_positive": 0.005459808575111106,
+          "selection_margin": 0.9890803828497777
+        },
+        {
+          "E_negative": -1.2263784498377142,
+          "E_positive": 1.2263784498377142,
+          "prior_projector_overlap_negative": 0.027794810205914917,
+          "prior_projector_overlap_positive": 0.9722051897940849,
+          "selection_margin": 0.94441037958817
+        },
+        {
+          "E_negative": -1.2836073031139068,
+          "E_positive": 1.2836073031139064,
+          "prior_projector_overlap_negative": 0.027259452785464232,
+          "prior_projector_overlap_positive": 0.9727405472145358,
+          "selection_margin": 0.9454810944290716
+        }
+      ],
+      "particle_number": 3.400006160347751,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 1.5977238059300435e-15,
+      "round": 0,
+      "side": "left"
+    },
+    {
+      "assignment_margin": 0.31669571521554335,
+      "bdg_gap": 0.8521680247006712,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.9967536267684611,
+      "energy": 0.5653058687535905,
+      "mean_assignment_overlap": 0.9778806047759833,
+      "minimum_label_overlap": 0.9832087341556459,
+      "minimum_ph_selection_margin": 0.962601879675537,
+      "mu": -0.75,
+      "number": 3.6298208740015845,
+      "pair_diagnostics": [
+        {
+          "E_negative": -0.8521680247006714,
+          "E_positive": 0.8521680247006712,
+          "prior_projector_overlap_negative": 0.0012868588893240242,
+          "prior_projector_overlap_positive": 0.9987131411106753,
+          "selection_margin": 0.9974262822213513
+        },
+        {
+          "E_negative": -0.918728913864589,
+          "E_positive": 0.9187289138645887,
+          "prior_projector_overlap_negative": 0.9902858682564799,
+          "prior_projector_overlap_positive": 0.009714131743520805,
+          "selection_margin": 0.9805717365129591
+        },
+        {
+          "E_negative": -1.1031738435405316,
+          "E_positive": 1.1031738435405325,
+          "prior_projector_overlap_negative": 0.009815372186073085,
+          "prior_projector_overlap_positive": 0.9901846278139274,
+          "selection_margin": 0.9803692556278543
+        },
+        {
+          "E_negative": -1.224610476964259,
+          "E_positive": 1.224610476964259,
+          "prior_projector_overlap_negative": 0.9947808834531887,
+          "prior_projector_overlap_positive": 0.005219116546811283,
+          "selection_margin": 0.9895617669063774
+        },
+        {
+          "E_negative": -1.432189764808263,
+          "E_positive": 1.4321897648082633,
+          "prior_projector_overlap_negative": 0.018699060162231735,
+          "prior_projector_overlap_positive": 0.9813009398377688,
+          "selection_margin": 0.962601879675537
+        },
+        {
+          "E_negative": -1.4906969633634493,
+          "E_positive": 1.4906969633634486,
+          "prior_projector_overlap_negative": 0.017475899773742816,
+          "prior_projector_overlap_positive": 0.982524100226258,
+          "selection_margin": 0.9650482004525152
+        }
+      ],
+      "particle_number": 3.6298208740015845,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 1.1475868276823952e-15,
+      "round": 0,
+      "side": "left"
+    },
+    {
+      "assignment_margin": 0.32483570048966043,
+      "bdg_gap": 1.2462768765916792,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.9986729184284319,
+      "energy": 0.5499052688516851,
+      "mean_assignment_overlap": 0.985314755868638,
+      "minimum_label_overlap": 0.9882343359408758,
+      "minimum_ph_selection_margin": 0.9735240033270358,
+      "mu": -1.1500000000000001,
+      "number": 3.769954091161997,
+      "pair_diagnostics": [
+        {
+          "E_negative": -1.2462768765916792,
+          "E_positive": 1.2462768765916798,
+          "prior_projector_overlap_negative": 0.0009011948810256371,
+          "prior_projector_overlap_positive": 0.9990988051189748,
+          "selection_margin": 0.9981976102379491
+        },
+        {
+          "E_negative": -1.3042421401619353,
+          "E_positive": 1.3042421401619346,
+          "prior_projector_overlap_negative": 0.9867620016635184,
+          "prior_projector_overlap_positive": 0.01323799833648257,
+          "selection_margin": 0.9735240033270358
+        },
+        {
+          "E_negative": -1.4247729209624442,
+          "E_positive": 1.4247729209624438,
+          "prior_projector_overlap_negative": 0.012574998678889934,
+          "prior_projector_overlap_positive": 0.9874250013211097,
+          "selection_margin": 0.9748500026422198
+        },
+        {
+          "E_negative": -1.547001880207534,
+          "E_positive": 1.5470018802075336,
+          "prior_projector_overlap_negative": 0.9945765071588877,
+          "prior_projector_overlap_positive": 0.005423492841112685,
+          "selection_margin": 0.989153014317775
+        },
+        {
+          "E_negative": -1.7101333239057035,
+          "E_positive": 1.7101333239057037,
+          "prior_projector_overlap_negative": 0.01175771932660134,
+          "prior_projector_overlap_positive": 0.9882422806733993,
+          "selection_margin": 0.976484561346798
+        },
+        {
+          "E_negative": -1.7697059573134366,
+          "E_positive": 1.769705957313436,
+          "prior_projector_overlap_negative": 0.009582587474250856,
+          "prior_projector_overlap_positive": 0.9904174125257491,
+          "selection_margin": 0.9808348250514982
+        }
+      ],
+      "particle_number": 3.769954091161997,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 1.4999951046283534e-15,
+      "round": 0,
+      "side": "left"
+    },
+    {
+      "assignment_margin": 0.3264813429814534,
+      "bdg_gap": 1.642404124475283,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.99891988169747,
+      "energy": 0.5408661994260754,
+      "mean_assignment_overlap": 0.9875284202749146,
+      "minimum_label_overlap": 0.988726550228028,
+      "minimum_ph_selection_margin": 0.9662799312919959,
+      "mu": -1.55,
+      "number": 3.8534036534757954,
+      "pair_diagnostics": [
+        {
+          "E_negative": -1.6424041244752834,
+          "E_positive": 1.642404124475283,
+          "prior_projector_overlap_negative": 0.000621171940694019,
+          "prior_projector_overlap_positive": 0.9993788280593053,
+          "selection_margin": 0.9987576561186113
+        },
+        {
+          "E_negative": -1.6916212728415936,
+          "E_positive": 1.6916212728415947,
+          "prior_projector_overlap_negative": 0.9831399656459996,
+          "prior_projector_overlap_positive": 0.016860034354003746,
+          "selection_margin": 0.9662799312919959
+        },
+        {
+          "E_negative": -1.7780544392345585,
+          "E_positive": 1.7780544392345596,
+          "prior_projector_overlap_negative": 0.016031005375147855,
+          "prior_projector_overlap_positive": 0.983968994624851,
+          "selection_margin": 0.9679379892497031
+        },
+        {
+          "E_negative": -1.8994471924427412,
+          "E_positive": 1.8994471924427405,
+          "prior_projector_overlap_negative": 0.9943496986251876,
+          "prior_projector_overlap_positive": 0.005650301374811224,
+          "selection_margin": 0.9886993972503764
+        },
+        {
+          "E_negative": -2.031024453160892,
+          "E_positive": 2.0310244531608936,
+          "prior_projector_overlap_negative": 0.008340626026290566,
+          "prior_projector_overlap_positive": 0.9916593739737112,
+          "selection_margin": 0.9833187479474206
+        },
+        {
+          "E_negative": -2.0913990709419257,
+          "E_positive": 2.091399070941925,
+          "prior_projector_overlap_negative": 0.005207832671231433,
+          "prior_projector_overlap_positive": 0.994792167328767,
+          "selection_margin": 0.9895843346575355
+        }
+      ],
+      "particle_number": 3.8534036534757954,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 2.013524513908682e-15,
+      "round": 0,
+      "side": "left"
+    },
+    {
+      "assignment_margin": 0.311443003100631,
+      "bdg_gap": 0.6738217398255182,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.9911060139454977,
+      "energy": 0.4436714902889327,
+      "mean_assignment_overlap": 0.9711907928368003,
+      "minimum_label_overlap": 0.9803935195766622,
+      "minimum_ph_selection_margin": 0.9548459925942596,
+      "mu": 0.8500000000000001,
+      "number": 2.4541280789944557,
+      "pair_diagnostics": [
+        {
+          "E_negative": -0.6738217398255183,
+          "E_positive": 0.6738217398255182,
+          "prior_projector_overlap_negative": 0.0037239661873824685,
+          "prior_projector_overlap_positive": 0.9962760338126182,
+          "selection_margin": 0.9925520676252357
+        },
+        {
+          "E_negative": -0.7695604993889757,
+          "E_positive": 0.7695604993889761,
+          "prior_projector_overlap_negative": 0.9969963914059775,
+          "prior_projector_overlap_positive": 0.003003608594023569,
+          "selection_margin": 0.9939927828119539
+        },
+        {
+          "E_negative": -1.0071195013909493,
+          "E_positive": 1.0071195013909493,
+          "prior_projector_overlap_negative": 0.005459332723079253,
+          "prior_projector_overlap_positive": 0.9945406672769207,
+          "selection_margin": 0.9890813345538414
+        },
+        {
+          "E_negative": -1.1134425509885209,
+          "E_positive": 1.1134425509885209,
+          "prior_projector_overlap_negative": 0.9917139109206754,
+          "prior_projector_overlap_positive": 0.008286089079327368,
+          "selection_margin": 0.983427821841348
+        },
+        {
+          "E_negative": -1.3452469536857308,
+          "E_positive": 1.3452469536857303,
+          "prior_projector_overlap_negative": 0.021849761276281566,
+          "prior_projector_overlap_positive": 0.9781502387237181,
+          "selection_margin": 0.9563004774474365
+        },
+        {
+          "E_negative": -1.398523863844451,
+          "E_positive": 1.3985238638444497,
+          "prior_projector_overlap_negative": 0.022577003702870024,
+          "prior_projector_overlap_positive": 0.9774229962971296,
+          "selection_margin": 0.9548459925942596
+        }
+      ],
+      "particle_number": 2.4541280789944557,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 2.1263871251211607e-15,
+      "round": 0,
+      "side": "right"
+    },
+    {
+      "assignment_margin": 0.323470889920833,
+      "bdg_gap": 1.0603321083275006,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.9966362377426816,
+      "energy": 0.383323560231589,
+      "mean_assignment_overlap": 0.9846465917255336,
+      "minimum_label_overlap": 0.989826394592864,
+      "minimum_ph_selection_margin": 0.9724801887869321,
+      "mu": 1.25,
+      "number": 2.2841629158557817,
+      "pair_diagnostics": [
+        {
+          "E_negative": -1.0603321083275015,
+          "E_positive": 1.0603321083275006,
+          "prior_projector_overlap_negative": 0.002576374340212675,
+          "prior_projector_overlap_positive": 0.9974236256597859,
+          "selection_margin": 0.9948472513195733
+        },
+        {
+          "E_negative": -1.1609315400266047,
+          "E_positive": 1.1609315400266047,
+          "prior_projector_overlap_negative": 0.9953156890741326,
+          "prior_projector_overlap_positive": 0.0046843109258669895,
+          "selection_margin": 0.9906313781482656
+        },
+        {
+          "E_negative": -1.3131317495606267,
+          "E_positive": 1.313131749560626,
+          "prior_projector_overlap_negative": 0.006210397797006707,
+          "prior_projector_overlap_positive": 0.9937896022029924,
+          "selection_margin": 0.9875792044059857
+        },
+        {
+          "E_negative": -1.4143287377866476,
+          "E_positive": 1.4143287377866471,
+          "prior_projector_overlap_negative": 0.9916947573934968,
+          "prior_projector_overlap_positive": 0.008305242606504858,
+          "selection_margin": 0.9833895147869919
+        },
+        {
+          "E_negative": -1.6008308264494202,
+          "E_positive": 1.600830826449419,
+          "prior_projector_overlap_negative": 0.012767076111653047,
+          "prior_projector_overlap_positive": 0.9872329238883453,
+          "selection_margin": 0.9744658477766922
+        },
+        {
+          "E_negative": -1.6531470418977798,
+          "E_positive": 1.6531470418977798,
+          "prior_projector_overlap_negative": 0.013759905606533347,
+          "prior_projector_overlap_positive": 0.9862400943934655,
+          "selection_margin": 0.9724801887869321
+        }
+      ],
+      "particle_number": 2.2841629158557817,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 2.7075951220622644e-15,
+      "round": 0,
+      "side": "right"
+    },
+    {
+      "assignment_margin": 0.3276351716189458,
+      "bdg_gap": 1.4507691193286343,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.9957022609356602,
+      "energy": 0.34124481625693126,
+      "mean_assignment_overlap": 0.988951091415386,
+      "minimum_label_overlap": 0.9924397551205538,
+      "minimum_ph_selection_margin": 0.9833114388975032,
+      "mu": 1.65,
+      "number": 2.183209627890099,
+      "pair_diagnostics": [
+        {
+          "E_negative": -1.4507691193286356,
+          "E_positive": 1.4507691193286343,
+          "prior_projector_overlap_negative": 0.0018268751805776058,
+          "prior_projector_overlap_positive": 0.9981731248194201,
+          "selection_margin": 0.9963462496388426
+        },
+        {
+          "E_negative": -1.5548805898699414,
+          "E_positive": 1.5548805898699427,
+          "prior_projector_overlap_negative": 0.9925766677977105,
+          "prior_projector_overlap_positive": 0.007423332202287692,
+          "selection_margin": 0.9851533355954227
+        },
+        {
+          "E_negative": -1.6588551657696953,
+          "E_positive": 1.658855165769698,
+          "prior_projector_overlap_negative": 0.008344280551248247,
+          "prior_projector_overlap_positive": 0.9916557194487514,
+          "selection_margin": 0.9833114388975032
+        },
+        {
+          "E_negative": -1.754819172782261,
+          "E_positive": 1.7548191727822606,
+          "prior_projector_overlap_negative": 0.9926122701108518,
+          "prior_projector_overlap_positive": 0.007387729889148983,
+          "selection_margin": 0.9852245402217029
+        },
+        {
+          "E_negative": -1.9085845322030406,
+          "E_positive": 1.908584532203041,
+          "prior_projector_overlap_negative": 0.0071650723884138625,
+          "prior_projector_overlap_positive": 0.9928349276115844,
+          "selection_margin": 0.9856698552231705
+        },
+        {
+          "E_negative": -1.9602017944019492,
+          "E_positive": 1.9602017944019494,
+          "prior_projector_overlap_negative": 0.00829961414332107,
+          "prior_projector_overlap_positive": 0.9917003858566771,
+          "selection_margin": 0.983400771713356
+        }
+      ],
+      "particle_number": 2.183209627890099,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 2.0131532913209135e-15,
+      "round": 0,
+      "side": "right"
+    },
+    {
+      "assignment_margin": 0.328552525344952,
+      "bdg_gap": 1.843185563102241,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.993704393642,
+      "energy": 0.3139742596527181,
+      "mean_assignment_overlap": 0.9903109053180263,
+      "minimum_label_overlap": 0.9919664129174293,
+      "minimum_ph_selection_margin": 0.9759226060576845,
+      "mu": 2.0500000000000003,
+      "number": 2.122082159997763,
+      "pair_diagnostics": [
+        {
+          "E_negative": -1.843185563102241,
+          "E_positive": 1.843185563102242,
+          "prior_projector_overlap_negative": 0.0013391510810818038,
+          "prior_projector_overlap_positive": 0.9986608489189177,
+          "selection_margin": 0.9973216978378359
+        },
+        {
+          "E_negative": -1.9493458421286618,
+          "E_positive": 1.9493458421286622,
+          "prior_projector_overlap_negative": 0.9884951021860452,
+          "prior_projector_overlap_positive": 0.011504897813954853,
+          "selection_margin": 0.9769902043720904
+        },
+        {
+          "E_negative": -2.025016609855736,
+          "E_positive": 2.0250166098557365,
+          "prior_projector_overlap_negative": 0.012038696971158044,
+          "prior_projector_overlap_positive": 0.9879613030288426,
+          "selection_margin": 0.9759226060576845
+        },
+        {
+          "E_negative": -2.1156242338680835,
+          "E_positive": 2.115624233868083,
+          "prior_projector_overlap_negative": 0.9940236446684854,
+          "prior_projector_overlap_positive": 0.0059763553315131165,
+          "selection_margin": 0.9880472893369723
+        },
+        {
+          "E_negative": -2.247082172756441,
+          "E_positive": 2.2470821727564423,
+          "prior_projector_overlap_negative": 0.004127963753333536,
+          "prior_projector_overlap_positive": 0.9958720362466651,
+          "selection_margin": 0.9917440724933315
+        },
+        {
+          "E_negative": -2.298226006154324,
+          "E_positive": 2.298226006154323,
+          "prior_projector_overlap_negative": 0.005285194926120681,
+          "prior_projector_overlap_positive": 0.994714805073879,
+          "selection_margin": 0.9894296101477583
+        }
+      ],
+      "particle_number": 2.122082159997763,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 2.347307401019634e-15,
+      "round": 0,
+      "side": "right"
+    },
+    {
+      "assignment_margin": 0.32731514555500474,
+      "bdg_gap": 2.236901513604824,
+      "blocked_label_index": 2,
+      "blocked_label_overlap": 0.9914180951591177,
+      "energy": 0.29770629945725025,
+      "mean_assignment_overlap": 0.9904752694625157,
+      "minimum_label_overlap": 0.9904636846643974,
+      "minimum_ph_selection_margin": 0.9672405536573792,
+      "mu": 2.45,
+      "number": 2.0834148093230214,
+      "pair_diagnostics": [
+        {
+          "E_negative": -2.236901513604824,
+          "E_positive": 2.236901513604825,
+          "prior_projector_overlap_negative": 0.0010178546665173252,
+          "prior_projector_overlap_positive": 0.9989821453334835,
+          "selection_margin": 0.9979642906669662
+        },
+        {
+          "E_negative": -2.3436100336565655,
+          "E_positive": 2.343610033656567,
+          "prior_projector_overlap_negative": 0.9839245448829701,
+          "prior_projector_overlap_positive": 0.01607545511702707,
+          "selection_margin": 0.9678490897659431
+        },
+        {
+          "E_negative": -2.4029408691183565,
+          "E_positive": 2.4029408691183556,
+          "prior_projector_overlap_negative": 0.016379723171311505,
+          "prior_projector_overlap_positive": 0.9836202768286907,
+          "selection_margin": 0.9672405536573792
+        },
+        {
+          "E_negative": -2.487991202523874,
+          "E_positive": 2.487991202523873,
+          "prior_projector_overlap_negative": 0.9954366819697084,
+          "prior_projector_overlap_positive": 0.0045633180302904145,
+          "selection_margin": 0.9908733639394179
+        },
+        {
+          "E_negative": -2.6041940149211977,
+          "E_positive": 2.6041940149211977,
+          "prior_projector_overlap_negative": 0.0024348521417009326,
+          "prior_projector_overlap_positive": 0.9975651478582994,
+          "selection_margin": 0.9951302957165985
+        },
+        {
+          "E_negative": -2.6550279819181,
+          "E_positive": 2.655027981918101,
+          "prior_projector_overlap_negative": 0.00351981846795249,
+          "prior_projector_overlap_positive": 0.996480181532048,
+          "selection_margin": 0.9929603630640955
+        }
+      ],
+      "particle_number": 2.0834148093230214,
+      "phase": "mu_continue",
+      "purity_abs_frobenius": 2.094401241446466e-15,
+      "round": 0,
+      "side": "right"
+    }
+  ],
+  "model": {
+    "D1S_strength": 1.0,
+    "block_operation": "particle toggle in initial NoSeaBranchReference; label 2 transported by max overlap",
+    "blocked_index": 2,
+    "chart": "projected fixed-seed QR; candidate convention initial_pair_coordinates(problem)",
+    "h0": {
+      "imag": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "real": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.042,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.09000000000000001,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.145,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.21000000000000002,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.27999999999999997,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -12.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -14.0
+        ]
+      ]
+    },
+    "initial_mu": 0.45,
+    "name": "MovingToy projected nucleon-space RHFB",
+    "normal_level_scale": 0.1,
+    "seed_coordinates": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.32,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -0.3,
+      0.0
+    ],
+    "source": {
+      "imag": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "real": [
+        [
+          0.0,
+          0.22,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.045,
+          0.0
+        ],
+        [
+          0.22,
+          0.0,
+          -0.17,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          -0.17,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.035
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.13,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.13,
+          0.0,
+          0.0,
+          0.025,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.045,
+          0.0,
+          0.0,
+          0.0,
+          0.025,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          -0.035,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    "target_number": 3.0
+  },
+  "prescription": "P+(h) projected nucleon-space BdG with tracked pure odd R projector",
+  "round_states": [],
+  "run": {
+    "continuation_steps_per_half_interval": 10,
+    "density_mixing": false,
+    "field_mixing": 0.3,
+    "field_mixing_only": true,
+    "field_tolerance": 0.002,
+    "max_bisections": 12,
+    "max_iterations": 8,
+    "mu_half_width": 2.0,
+    "number_tolerance": 0.0002
+  },
+  "schema": "tracked-bdg-reference-v1",
+  "scope": "reference-only finite MovingToy; not a production PK A1 result",
+  "source": {
+    "current_module_after_fixes": "/home/ubuntu/rhf/DFT-RHF-NoRefresh/variants/blocked-rhfb/dpl_rhf/rhfb/tracked_bdg_reference.py",
+    "current_module_sha256": "56f88f2f29a5f6457ac70d32c072df13f32c1aeab5a8aad7372a14e0958a1fe2",
+    "module": "/home/ubuntu/rhf/DFT-RHF-NoRefresh/variants/blocked-rhfb/dpl_rhf/rhfb/tracked_bdg_reference.py",
+    "run_invocation": "run_tracked_bdg_reference(max_iterations=8)",
+    "sha256": "c030e06085438ac6ad57c22ae39cb2dd6dbdd1f4928ed1f3b4c4bc7991da9832"
+  },
+  "stationarity_target": "self-consistent fields and exact-number \u03bc root on continued blocked PH branch",
+  "status": {
+    "converged": false,
+    "final_number_bracket": null,
+    "iterations_completed": 0,
+    "stop_reason": "reference_failed: RuntimeError: tracked N(mu) is not increasing over verified bracket: 3.853404->2.083415"
+  }
+}

@@ -1,0 +1,35 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+
+# Training products are reproducible and can be large.
+outputs/
+dist/
+build/
+*.egg-info/
+
+# Local reference literature and uploaded figures are not source artifacts.
+*.pdf
+*.png
+*.zip
+
+# Local snapshots and tool sandboxes.
+backups/
+.agents/
+.aws/
+.codex/
+.venv/
+.tools/
+group_meeting_package_*/
+
+# Checkpoints and numerical data.
+*.pt
+*.npz
+*.tar.gz
+*.sha256
+
+# Reference literature and uploaded figures are not source artifacts.
+*.pdf
+*.png
+*.zip

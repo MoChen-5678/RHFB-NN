@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=60.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dpl-rmf-fast-1d"
+version = "2.0.0"
+description = "DPL_RMF-fast-1D full-space neural variational RMF solver"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "torch>=2.0",
+  "matplotlib>=3.7",
+  "scipy>=1.10",
+  "sympy>=1.12",
+]
+
+[project.scripts]
+dpl-no-refresh = "dpl_rhf.cli.no_refresh:main"
+dpl-rmf-train = "dpl_rhf.cli.prl_train:main"
+dpl-rmf-evaluate = "dpl_rhf.cli.evaluate_checkpoint:main"
+dpl-rmf-batch = "dpl_rhf.cli.batch_rmf:main"
+dpl-rmf-compare = "dpl_rhf.cli.compare_core1204:main"
+dpl-rmf-plot = "dpl_rhf.cli.plot_results:main"
+dpl-rmf-check = "dpl_rhf.cli.check_environment:main"
+dpl-rhf-train = "dpl_rhf.cli.rhf_train:main"
+dpl-rhf-evaluate = "dpl_rhf.cli.rhf_evaluate:main"
+dpl-rhf-compare-core = "dpl_rhf.cli.rhf_compare_core:main"
+dpl-rhf-compare-core1204 = "dpl_rhf.cli.compare_rhf_core1204:main"
+dpl-rhf-plot = "dpl_rhf.cli.rhf_plot:main"
+dpl-rhf-batch-pka1 = "dpl_rhf.cli.batch_pka1_no_refresh:main"
+dpl-rhfb-sph-train = "dpl_rhf.cli.rhfb_spherical_train:main"
+
+[tool.setuptools.packages.find]
+include = ["dpl_rhf*"]
+
+[tool.setuptools.package-data]
+dpl_rhf = ["py.typed"]

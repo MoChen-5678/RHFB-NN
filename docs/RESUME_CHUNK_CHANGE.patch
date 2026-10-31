@@ -1,0 +1,83 @@
+Subject: Permit normal-coordinate tile-size changes on v2 resume
+
+Review-only proposal. This patch text is not applied to runtime code.
+
+Assessment
+==========
+
+`normal_tile_size` in `StreamedPrimitiveNormalFunctional` only partitions the same primitive-coordinate integrals into x tiles. It changes peak temporary memory and the order of floating-point accumulation, but not the basis, quadrature, interaction, density, or mathematical functional. Allowing 8 -> 16/32 is therefore a numerical execution change, not a physics/model change. It can cause small roundoff differences in energy/gradients and thus later Adam/backtracking trajectories; the resume must retain optimizer moments but record that this continuation changed tiling. It must not be described as bitwise-identical continuation.
+
+For this narrowly requested change, keep `normal_chunk_size`, `residual_chunk_size`, `pairing_chunk_size`, and `pairing_active_chunk_size` exact-match. They are also execution partitions in principle, but changing several at once expands the numerical-equivalence claim and makes it harder to attribute any observed differences. Revisit those separately with equivalent partition tests. Keep all physical/model/optimizer compatibility guards strict, including PKA1 and D1S parameters, functional/evaluator identity, PH `lmax`, complete basis metadata (radius, spacing, angular grid, derivative order, kappa/primitive dimension), number targets, model architecture and reference fingerprint, device, number/objective prescription and weights, chemical-potential training, learning rate, AL settings, and trial/backtracking options. `updates_requested` and the fresh-run-only chemical-potential initializer remain continuation exceptions as they are today.
+
+Proposed source diff
+====================
+
+```diff
+diff --git a/variants/blocked-rhfb/dpl_rhf/rhfb/selfconsistent_neural_training.py b/variants/blocked-rhfb/dpl_rhf/rhfb/selfconsistent_neural_training.py
+--- a/variants/blocked-rhfb/dpl_rhf/rhfb/selfconsistent_neural_training.py
++++ b/variants/blocked-rhfb/dpl_rhf/rhfb/selfconsistent_neural_training.py
+@@
+ def _resume_compatibility(metadata):
+     models = {}
+     for species in ("n", "p"):
+         info = metadata["models"][species]
+         models[species] = {
+             "architecture": {k: v for k, v in info.items()
+                              if k != "state_fingerprint"},
+             "reference_fingerprint": metadata["model_reference_fingerprints"][species],
+         }
++    # Coordinate tile width only changes memory scheduling and floating-point
++    # accumulation order. Keep its requested value in metadata for provenance,
++    # but exclude it from the physical/optimizer continuation contract.
++    normal_functional = dict(metadata["normal_functional"])
++    normal_functional.pop("tile_size", None)
++    options = dict(metadata["options"])
++    options.pop("normal_tile_size", None)
+     return {
+@@
+-        "normal_functional": metadata["normal_functional"],
++        "normal_functional": normal_functional,
+@@
+-        "options": {k: v for k, v in metadata["options"].items()
++        "options": {k: v for k, v in options.items()
+                     if k not in {"updates_requested", "chemical_potential_initial"}},
+     }
+@@
+     if resume_from is not None:
+@@
+-        saved_fingerprint = saved_metadata.get("resume_compatibility_fingerprint")
++        # Recompute from stored v2 metadata. This also canonicalizes checkpoints
++        # written before tile_size was removed from the compatibility payload.
++        saved_fingerprint = _fingerprint(_resume_compatibility(saved_metadata))
+         if saved_fingerprint != metadata["resume_compatibility_fingerprint"]:
+@@
+                 "model architecture/reference, device, or optimizer options"
+             )
++        old_tile = saved_metadata.get("normal_functional", {}).get("tile_size")
++        new_tile = metadata.get("normal_functional", {}).get("tile_size")
++        resume_event = {
++            "checkpoint": str(source_checkpoint),
++            "accepted_updates": int(payload.get("accepted_updates", 0)),
++            "normal_tile_size_before": old_tile,
++            "normal_tile_size_after": new_tile,
++            "tile_change_is_execution_only": old_tile != new_tile,
++            "floating_point_trajectory_may_change": old_tile != new_tile,
++        }
++        # Preserve earlier changes when resuming an already resumed checkpoint.
++        metadata["resume_provenance_history"] = list(
++            saved_metadata.get("resume_provenance_history", [])) + [resume_event]
++        # Keep the full metadata fingerprint truthful after adding provenance.
++        metadata.pop("compatibility_fingerprint", None)
++        metadata["compatibility_fingerprint"] = _fingerprint(metadata)
+```
+
+The saved `metadata.normal_functional.tile_size` and `metadata.options.normal_tile_size` must remain the actual value used for that checkpoint; do not rewrite the source metadata to the new value before comparing. The canonical compatibility view drops only those two keys. Recomputing the saved canonical fingerprint instead of comparing its historical stored fingerprint is required for already-written v2 checkpoints, whose stored fingerprint included tile size.
+
+Suggested tests (do not run as part of this review)
+====================================================
+
+1. **End-to-end resume across tile widths.** Use the existing tiny `_toy_evaluator` checkpoint-resume fixture: train one accepted update with `normal_tile_size=8`, resume the saved v2 checkpoint with `normal_tile_size=16` (and separately 32), and assert resume succeeds, model/optimizer state restores, the resumed event records old and new tile widths, and the final checkpoint retains the new width. The toy evaluator does not prove production integral equivalence, so also add a small bounded PH-only comparison of the same fixed density/fields at tile widths 8/16/32, checking scalar channel totals and primitive fields within a stated roundoff tolerance without optimizing between evaluations.
+2. **Hard-guard regressions.** Build the same v2 fixture, then change exactly one of: basis metadata (including same D/P but altered radius/spacing/grid), PKA1 parameter value, or PH `lmax`; each resume must still fail compatibility. Assert the error identifies an incompatible basis/physics contract. Also retain the existing production-provider checks for parameter/basis/lmax consistency.
+3. **Provenance and old-checkpoint migration.** Start from a checkpoint whose stored fingerprint was computed with the pre-change compatibility function. Verify the new loader recomputes the canonical fingerprint from its saved metadata, allows only a tile-width difference, and records both widths plus source checkpoint/update number. Verify a second continuation checkpoint preserves the full provenance history and reports the current tile separately from the original source tile.
+
+No claim is made here that changed tiling preserves bitwise energies or optimizer trajectory. It preserves the defined physical discretization and objective; roundoff-scale differences should be quantified in the bounded equivalence test before production resume uses the option.

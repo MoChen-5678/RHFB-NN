@@ -1,0 +1,35 @@
+l6       =        10        ! output file
+rmax     =    25.000        ! Box-Radius
+xstep    =     0.100        ! Approximate Step-size
+maxi     =       500        ! maximal number of iterations
+xmix     =     0.500        ! mixing parameter
+inin     =         1        ! initialization of wavefunctions
+pset	 =         0        ! the parameter set used (see the list below)
+LFG      =         1        ! 1--> Gogny force;  0 --> Delta force
+GNF/V0   =     1.000        ! pairing strength 
+inout    =         0        ! output each step: 0 --> no; 1 --> yes
+Ca  52  32  20              ! nucleus under consideration
+0,0                         ! number of Blocking data (n, p)
+11,13,0,0,0                 ! Blocking index (n)
+11,13,0,0,0                 ! Blocking index (p)
+
+
+
+!--- parameter sets
+'0 --> PKA1, 1-3 --> PKO1-3, 4-5 --> DD-ME1-2, 6 --> PKDD, 7 --> TW99'
+'8-10 --> NL1-3, 11 --> NLZ, 12 --> NL-Z2, 13 --> NL-SH, 14 --> NL-SV1'
+'15-16 --> TM1-2, 17 --> PK1, 18 --> PK1R'
+c----------------------------------------------------------------------c
+c   Data for levels (read from BASE)   N = 2(n-1)+l = 20
+c----------------------------------------------------------------------c
+levin=1:
+j+1/2       1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+nmax  SN+  15 15 14 14 13 13 12 12 11 11 10 10  6  6  5  5  4  4  3  3
+noc   SN+   3  2  2  1  1  2  2  2  2  2  0  0  0  0  0  0  0  0  0  0
+nmax  SN-  15 14 14 13 13 12 12 11 11 10 10  7  7  6  6  5  5  4  4  3
+noc   SN-   2  2  1  1  1  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+nmax  SP+  15 15 14 14 13 13 12 12 11 11 10 10  6  6  5  5  4  4  3  3
+noc   SP+   2  1  1  1  1  2  2  2  2  2  0  0  0  0  0  0  0  0  0  0
+nmax  SP-  15 14 14 13 13 12 12 11 11 10 10  7  7  6  6  5  5  4  4  3
+noc   SP-   2  2  1  1  1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+c----------------------------------------------------------------------c

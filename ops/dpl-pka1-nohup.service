@@ -1,0 +1,17 @@
+[Unit]
+Description=PKA1 five-nucleus persistent nohup batch
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/ubuntu/rhf/DFT-RHF
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/usr/bin/nohup /home/ubuntu/anaconda3/envs/torch_env/bin/python -m dpl_rhf.cli.batch_pkdd_pka1 --epochs 500 --refresh-interval 100 --checkpoint-every 10 --torch-threads 2 --pka1-total-workers 1 --pka1-memory-high 28G --pka1-memory-max 34G --pka1-slice dpl-pka1.slice --pka1-graph-offload recompute --pka1-pb208-stationarity-weight 0.4657901750825708 --pka1-graph-offload-dir /home/ubuntu/rhf/DFT-RHF/outputs/.pka1_graph_cache --pka1-graph-offload-min-mib 0.25 --gpus 0 --pkdd-slots-per-gpu 1 --pka1-slots-per-gpu 1 --core-dir /home/ubuntu/rhf/Core-1204 --out /home/ubuntu/rhf/DFT-RHF/outputs/pkdd_pka1_five_nuclei_refresh4_500
+Restart=on-failure
+RestartSec=30
+StandardInput=null
+StandardOutput=append:/home/ubuntu/rhf/DFT-RHF/outputs/pkdd_pka1_five_nuclei_refresh4_500/nohup_batch.log
+StandardError=append:/home/ubuntu/rhf/DFT-RHF/outputs/pkdd_pka1_five_nuclei_refresh4_500/nohup_batch.log
+
+[Install]
+WantedBy=default.target

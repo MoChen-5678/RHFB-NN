@@ -1,0 +1,291 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>DPL-RMF v1.0.0 Documentation</title><style>body{margin:0;font:16px/1.65 system-ui;color:#202124;background:#fff}nav{position:fixed;width:245px;height:100vh;overflow:auto;background:#f5f7f8;padding:24px;box-sizing:border-box}nav a{display:block;color:#174ea6;text-decoration:none;padding:5px 0}main{margin-left:285px;max-width:1040px;padding:36px 48px}h1{border-bottom:2px solid #263238;padding-bottom:8px}h2{margin-top:36px}pre{background:#202124;color:#f5f5f5;padding:16px;overflow:auto}img{max-width:100%;height:auto;border:1px solid #ddd}p{white-space:pre-wrap}section{margin-bottom:70px}@media(max-width:800px){nav{position:static;width:auto;height:auto}main{margin:0;padding:20px}}</style></head><body><nav><h2>DPL-RMF v1.0.0</h2><a href="#INSTALLATION">INSTALLATION</a><a href="#USER_GUIDE">USER GUIDE</a><a href="#PHYSICS_AND_WORKFLOW">PHYSICS AND WORKFLOW</a><a href="#EXPERIMENT_DESIGN">EXPERIMENT DESIGN</a><a href="#RESULTS_PKDD_O16">RESULTS PKDD O16</a><a href="#OUTPUT_SCHEMA">OUTPUT SCHEMA</a><a href="#DEVELOPER_GUIDE">DEVELOPER GUIDE</a><a href="#TROUBLESHOOTING">TROUBLESHOOTING</a><a href="#REFERENCES">REFERENCES</a></nav><main><section id="INSTALLATION"><h1>安装与运行环境</h1>
+<h2>1. 平台要求</h2>
+<p>发布包目标平台为 Linux x86-64。Python 求解器至少需要 Python 3.10、NumPy 1.24、PyTorch 2.0 和 Matplotlib 3.7。SCF 对比还需要 `libgfortran.so.5`、`libgomp.so.1`、`libquadmath.so.0`。CUDA 训练需要宿主机 NVIDIA 驱动；驱动不随发布包分发。</p>
+<h2>2. Conda 安装（推荐）</h2>
+<pre><code>
+tar -xzf DPL-RMF-DensityMatrix-v1.0.0-linux-x86_64.tar.gz
+cd DPL-RMF-DensityMatrix-v1.0.0/DFT-RHF
+conda env create -f environment.yml
+conda activate dpl-rmf
+dpl-rmf-check
+</code></pre>
+<p>已有 `torch_env` 时可直接安装当前源码：</p>
+<pre><code>
+conda activate torch_env
+python -m pip install . --no-deps --no-build-isolation
+dpl-rmf-check
+</code></pre>
+<p>若需要固定 CUDA 版本，应先按照 PyTorch 官方方式安装匹配驱动的构建，再运行 `pip install -e . --no-deps`。</p>
+<h2>3. CPU 安装</h2>
+<pre><code>
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m pip install . --no-deps --no-build-isolation
+dpl-rmf-check
+</code></pre>
+<p>CPU 可以完成训练和推理。对当前 201 点球对称网格，小型模型在 CPU 上可能比启动多个 GPU 进程更稳定。</p>
+<h2>4. Core-1204 定位</h2>
+<p>程序依次检查 `--core-dir`、`DPL_RHF_CORE_DIR`、DFT-RHF 相邻的 `Core-1204`、当前目录附近的 `Core-1204`。</p>
+<pre><code>
+export DPL_RHF_CORE_DIR=/absolute/path/to/Core-1204
+dpl-rmf-check
+</code></pre>
+<p>发布包内默认布局无需设置环境变量。预编译库仅适用于 Linux x86-64。</p>
+<h2>5. 重新编译 Core</h2>
+<p>需要 `gfortran`、BLAS 和 LAPACK 开发库：</p>
+<pre><code>
+cd ../Core-1204
+make -f Makefile.build clean
+make -f Makefile.build -j
+cd ../DFT-RHF
+dpl-rmf-check --core-dir ../Core-1204
+</code></pre>
+<p>重新编译不会改变 DPL 损失；Core 仅用于最终固定势谱和外部 SCF 对比。</p>
+<h2>6. 环境检查解释</h2>
+<p>`dpl-rmf-check` 返回 JSON。`passed=true` 表示 Python 平台和 Core 动态库可用。`cuda_available=false` 不影响 CPU 模式。使用 `--require-cuda` 可把 CUDA 不可用视为失败。</p></section><section id="USER_GUIDE"><h1>完整使用说明</h1>
+<h2>1. 单核训练</h2>
+<pre><code>
+dpl-rmf-train --mode density-matrix --functional rmf-dd \
+  --model PKDD --z 8 --n 8 --a 16 \
+  --epochs 500 --device cuda --seed 20240623 \
+  --hidden 64 --network-depth 3 --radial-basis-size 16 \
+  --activation silu --lr 1e-4 --derivative-order 7 \
+  --density-stationarity-weight 1000 --density-energy-weight 1 \
+  --density-refresh-interval 100 \
+  --density-stationarity-gate 1e-2 --density-spectral-gate 1e-2 \
+  --checkpoint-policy physics --out outputs/PKDD_O16
+</code></pre>
+<p>`A` 默认取 `Z+N`，不是网络输入归一化量。`--checkpoint-policy physics` 保存驻定性监视量最小的 epoch。`--device auto` 自动选择 CUDA 或 CPU；为可复现实验建议明确指定。</p>
+<h2>2. 关键参数</h2>
+<p>| 参数 | 作用 | 推荐值 |</p>
+<p>|---|---|---:|</p>
+<p>| `--hidden` | 每层隐藏神经元数 | 64 |</p>
+<p>| `--network-depth` | SiLU 隐藏层数 | 3 |</p>
+<p>| `--radial-basis-size` | sinc 径向特征数 | 16 |</p>
+<p>| `--density-correction-scale` | 相对初始物理投影子的网络修正尺度 | 0.01 |</p>
+<p>| `--density-stationarity-weight` | 驻定性残差平方权重 | 1000 MeV^-1 |</p>
+<p>| `--density-energy-weight` | 总能量项权重 | 1 |</p>
+<p>| `--density-refresh-interval` | 正能空间稀疏刷新间隔 | 100 |</p>
+<p>| `--derivative-order` | ADF 微分设置 | 7 |</p>
+<p>| `--grad-clip` | 参数梯度裁剪范数 | 10 |</p>
+<p>训练损失不包含 SCF 标签。不要用 SCF 能量差直接反向传播，否则实验不再是无监督物理变分。</p>
+<h2>3. 加载模型</h2>
+<pre><code>
+dpl-rmf-evaluate examples/PKDD_O16/model.pt \
+  --device cpu --out outputs/PKDD_O16_reproduced
+</code></pre>
+<p>评估器从 checkpoint 读取核素、参数集、网络宽度、深度、径向基数量、微分阶数和修正尺度。它重新生成密度、场、哈密顿量、最终谱验证波函数和 `evaluation_summary.json`。checkpoint 与当前模型形状不兼容时会立即失败，不进行部分加载。</p>
+<h2>4. SCF 外部对比</h2>
+<pre><code>
+dpl-rmf-compare --dpl-dir outputs/PKDD_O16 \
+  --model PKDD --z 8 --n 8 --a 16 \
+  --tolerance 1e-10 --max-iterations 500 \
+  --core-dir ../Core-1204 \
+  --out outputs/PKDD_O16/scf_comparison
+</code></pre>
+<p>Core 固定 DPL 势得到的总能量不能作为 DPL 总能量；该调用只用于单粒子谱。DPL 总能量必须由同一密度和同一可微 RMF 泛函计算。</p>
+<h2>5. 批量运行</h2>
+<pre><code>
+nohup dpl-rmf-batch --mode density-matrix --epochs 5000 \
+  --models PKDD DD-ME1 DD-ME2 TW99 DD-LZ1 \
+  --nuclei O16 Ca40 Ca48 Sn132 Pb208 \
+  --gpus 0,1 --slots-per-gpu 3 \
+  --out outputs/rmf_5x5_density_matrix_5000 \
+  &gt; outputs/rmf_5x5_density_matrix_5000.nohup.log 2&gt;&amp;1 &amp;
+</code></pre>
+<p>每张卡三个进程只是调度上限，不保证显存一定足够。先用一个核素测量峰值显存，再确定并发数。`--aggregate-only` 不训练，只重新汇总已完成案例。</p>
+<h2>6. 重绘和判读</h2>
+<pre><code>
+dpl-rmf-plot outputs/PKDD_O16
+</code></pre>
+<p>先检查 `formula_invariants.json`，再检查 `training_solver_counts.json` 中训练求解次数为零，然后检查内部 1% gate 和最终谱一致性，最后才读取 SCF 外部误差。</p></section><section id="PHYSICS_AND_WORKFLOW"><h1>物理约束与完整工作流程</h1>
+<h2>1. 研究对象</h2>
+<p>当前求解器处理球对称、时间反演不变的偶偶核 DD-RMF Hartree 问题。网络寻找的是受约束单体密度矩阵 `P` 的驻定路径，而不是拟合 SCF 输出，也不是逐个 epoch 求解 Dirac 方程。</p>
+<figure><img src="images/density_matrix_constraints.png" alt="密度矩阵约束"></figure>
+<h2>2. 网络变量与硬约束</h2>
+<p>每个中子/质子和 `kappa` 分块使用低秩因子：</p>
+<pre><code>
+P_b = Q_b n_b Q_b^T,   Q_b = U_b C_b,   C_b^T C_b = I.
+</code></pre>
+<p>`U_b` 是固定或稀疏刷新的正能子空间，`n_b` 是由核子数和壳层占据确定的对角占据矩阵。网络从 `r/R`、`(r/R)^2` 和 sinc 径向特征出发，叠加核子种类、`kappa` 和主量子数嵌入，输出上下分量修正。所有非线性层均为 SiLU。QR 投影直接施加正交约束。</p>
+<p>由此严格保证 Hermitian 性、占据数固定、粒子数固定、满占据分块幂等、正能空间中的 no-sea 约束和轨道正交。这些不是可被权重牺牲的 penalty，而是网络前向图的构造性质。</p>
+<h2>3. 密度与动能</h2>
+<p>球对称标量密度和矢量密度分别使用 `G^2-F^2` 与 `G^2+F^2`，乘占据数和简并度后除以 `4*pi*r^2`。原点按 Core 的正规外推。中子、质子分别累加为 `rho_s_n/p` 和 `rho_v_n/p`。</p>
+<p>动能不是 Thomas-Fermi 或 ETF 近似，而是自由 Dirac 算符上的精确迹：</p>
+<pre><code>
+E_kin = sum_b g_b Tr(n_b Q_b^T T0_b Q_b).
+</code></pre>
+<p>中子和质子分别使用参数集中的物理质量。Dirac 径向耦合严格分为 `B1=-D_backward+kappa/r` 和 `B2=D_forward+kappa/r`，而不是用一个中心差分块替代两者。</p>
+<h2>4. DD-RMF 场与势</h2>
+<p>局域密度依赖耦合 `g_sigma(rho_b)`、`g_omega(rho_b)`、`g_rho(rho_b)` 由所选参数集给定。每次前向传播从网络密度解离散场方程：</p>
+<pre><code>
+(-Laplace + m_sigma^2) sigma = -g_sigma rho_s
+(-Laplace + m_omega^2) omega =  g_omega rho_b
+(-Laplace + m_rho^2)   rho   =  g_rho rho_3
+-Laplace A0 = e^2 rho_p
+</code></pre>
+<p>有质量场在无穷远采用指数衰减条件；库仑场与外部 `C/r` 解匹配。场通过可微线性求解进入 PyTorch 计算图。</p>
+<p>密度依赖耦合产生重排势：</p>
+<pre><code>
+Sigma_R = [rho_s dg_sigma sigma + rho_b dg_omega omega
+           + rho_3 dg_rho rho] / rho_sat.
+</code></pre>
+<p>标量自能 `S=g_sigma*sigma`，等标矢量势 `V0=g_omega*omega+Sigma_R`，同位旋矢量势 `V3=g_rho*rho`，质子还包含库仑势。中子/质子的 `V+S` 和 `V-S-2M` 通道与 Core-1204 符号一致。</p>
+<h2>5. 变分目标</h2>
+<p>消去满足场 Euler-Lagrange 方程的介子场后：</p>
+<pre><code>
+E[P] = E_kin[P] + E_sigma + E_omega + E_rho + E_Coulomb.
+</code></pre>
+<p>相互作用项使用半源场形式。质心修正不进入训练目标和主对比量，避免把只在最终波函数上定义的修正混进密度矩阵变分路径。</p>
+<p>仅降低能量可能沿不完整切空间漂移，因此损失同时包含投影驻定性：</p>
+<pre><code>
+R_b = H_b Q_b n_b - Q_b sym(Q_b^T H_b Q_b n_b)
+L = w_E E[P] + w_R RMS(R)^2.
+</code></pre>
+<p>`R_b=0` 是物理流形上的 Euler-Lagrange 驻定条件。它直接嵌入损失并由 PyTorch 自动微分传播。自动微分保证离散泛函与参数梯度一致，但不能单独防止 Dirac 海假态；假态由正能子空间约束和最终谱验证共同排除。</p>
+<h2>6. 稀疏谱刷新</h2>
+<p>初始化时建立正能空间。普通 epoch 只执行网络、QR、密度、场重建、能量与驻定残差，不调用本征求解器。每 `N` 个 epoch 可用当前哈密顿量刷新一次正能空间，刷新后输出头清零，使新投影子成为局部变分原点。最终只做一次谱求解以验证密度并输出单粒子态。</p>
+<figure><img src="images/architecture_workflow.png" alt="程序数据流"></figure>
+<h2>7. 一次完整运行</h2>
+<p>1. 解析参数集和 `Z/N/A`，构造 201 点径向网格。</p>
+<p>2. 构造七点 ADF Dirac 离散算符和场算符。</p>
+<p>3. 初始化占据壳层与各 `kappa` 正能子空间。</p>
+<p>4. 网络生成密度矩阵因子，QR 施加硬约束。</p>
+<p>5. 计算密度、密度依赖耦合和四个局域场。</p>
+<p>6. 构造 S/V 通道和完整局域哈密顿量。</p>
+<p>7. 计算精确迹动能、直接相互作用能和驻定残差。</p>
+<p>8. 反向传播更新网络；按设定间隔刷新正能空间。</p>
+<p>9. 选择驻定监视量最佳 checkpoint。</p>
+<p>10. 最终谱验证并写出密度、场、势、波函数、能量和诊断。</p>
+<p>11. 可选调用 Core-1204 SCF，只进行外部对比。</p>
+<h2>8. 能力边界</h2>
+<p>当前没有配对、形变、时间奇通道、非局域 Fock 交换、pion 赝矢量和 tensor 项。RHF 接口已经为非局域通道预留，但当前结果只能标记为 RMF。</p></section><section id="EXPERIMENT_DESIGN"><h1>实验设计</h1>
+<h2>1. 核心假设</h2>
+<p>H1：不使用 SCF 标签时，硬约束密度矩阵网络可以把 DD-RMF 离散作用量优化到物理驻点。H2：正能空间投影与稀疏刷新能够避免负能假态，同时避免每个 epoch 求解 Dirac 方程。H3：内部驻定性和最终谱一致性达到 1% 后，能量、半径、势场和占据单粒子谱应接近独立 Core-1204 SCF。</p>
+<h2>2. 基线和控制</h2>
+<ul>
+<li>主要方法：`density-matrix` 神经变分，SCF 不进入损失。</li>
+<li>外部基线：Core-1204 收敛 SCF，仅在训练完成后运行。</li>
+<li>数值基线：Chebyshev/direct 只用于方法学对照，不作为默认求解器。</li>
+<li>固定变量：同一参数集、核素、质量、网格、边界、占据规则、质心修正口径和收敛容差。</li>
+<li>重复实验：至少三个随机种子，报告均值、标准差及最佳/最差案例。</li>
+</ul>
+<h2>3. 主实验矩阵</h2>
+<p>参数集为 DD-ME1、DD-ME2、PKDD、TW99、DD-LZ1；核素为 O16、Ca40、Ca48、Sn132、Pb208，共 25 个案例。每个案例先进行 500 epoch 预筛，内部 gate 通过后再扩展到 2000 或 5000 epoch。并发训练时记录 GPU 型号、每卡进程数和峰值显存。</p>
+<h2>4. 主要指标</h2>
+<p>内部指标：粒子数误差、正交误差、幂等误差、归一化投影驻定残差、最终神经/谱密度相对 L2、普通训练步 Dirac 求解次数。</p>
+<p>外部指标：`Delta(E/A)`、相对能量误差、物质和电荷半径误差、S/V 通道 MAE/RMSE/最大误差、密度误差、占据单粒子能级 MAE/RMSE。势场统计排除 `r=0.001 fm` 原点占位点。</p>
+<h2>5. 验收规则</h2>
+<ul>
+<li>硬约束误差小于 `1e-10`。</li>
+<li>普通训练步 Dirac 求解次数严格等于 0。</li>
+<li>归一化驻定性残差不超过 0.01。</li>
+<li>最终谱密度相对 L2 最大值不超过 0.01。</li>
+<li>DPL 与 SCF 的无质心修正 `E/A` 相对误差不超过 1%。</li>
+<li>任一内部 gate 未通过时，不得仅凭能量接近宣称成功。</li>
+</ul>
+<h2>6. 消融实验</h2>
+<p>| 实验 | 变量 | 固定项 | 目的 |</p>
+<p>|---|---|---|---|</p>
+<p>| 刷新间隔 | 0/50/100/200 | 网络、种子、学习率 | 判断 no-sea 子空间漂移 |</p>
+<p>| 驻定权重 | 100/1000/10000 | 能量权重 1 | 判断能量与梯度对抗 |</p>
+<p>| 网络容量 | 32x2/64x3/128x4 | 径向特征 16 | 判断欠拟合和过参数化 |</p>
+<p>| 径向特征 | 8/16/32 | 64x3 网络 | 判断空间分辨率 |</p>
+<p>| 设备 | CPU/GPU | float64、种子 | 检查设备数值一致性 |</p>
+<p>| 正能投影 | 开/诊断性关闭 | 其余不变 | 证明假态抑制来源 |</p>
+<h2>7. 防止选择偏差</h2>
+<p>本问题没有监督标签的传统训练/验证划分，但仍可能对某个核素、种子或 SCF 基线后验调参。超参数先在 PKDD/O16 锁定，再原样运行其余 24 个案例。模型选择只使用内部驻定指标，SCF 用于盲评。失败案例完整保留，不按 SCF 误差筛选 checkpoint。</p>
+<h2>8. 可复现性</h2>
+<p>每个结果必须保留 checkpoint、summary、完整 history、随机种子、软件版本、设备、训练时间、求解器调用计数和命令日志。主表统一使用 no-CoM，任何质心修正结果必须单独标注。</p>
+<figure><img src="images/validation_dashboard.png" alt="验证面板"></figure></section><section id="RESULTS_PKDD_O16"><h1>PKDD/O16 参考实验</h1>
+<p>发布包自带 500 epoch CPU 结果。配置为 SiLU、隐藏宽度 64、3 层、16 个径向基、学习率 `1e-4`、驻定权重 1000、刷新间隔 100、随机种子 20240623、float64。</p>
+<figure><img src="images/training_convergence.png" alt="训练收敛"></figure>
+<h2>内部物理检验</h2>
+<p>| 指标 | 数值 | 判定 |</p>
+<p>|---|---:|---|</p>
+<p>| 最佳 epoch | 500 | - |</p>
+<p>| 归一化驻定残差 | 0.00350646 | 通过 1% gate |</p>
+<p>| 最大谱密度相对 L2 | 0.00040905 | 通过 1% gate |</p>
+<p>| 最大正交误差 | 8.88e-16 | 通过 |</p>
+<p>| 最大幂等误差 | 8.88e-16 | 通过 |</p>
+<p>| 训练期 Dirac 求解次数 | 0 | 通过 |</p>
+<p>| 稀疏刷新次数 | 4 | 显式计数 |</p>
+<h2>Core-1204 外部对比</h2>
+<p>| 物理量 | DPL | SCF | DPL-SCF |</p>
+<p>|---|---:|---:|---:|</p>
+<p>| E/A no CoM (MeV) | -7.31594866 | -7.31584846 | -0.00010020 |</p>
+<p>| 物质半径 no CoM (fm) | 2.56647638 | 2.56633713 | +0.00013925 |</p>
+<p>| 电荷半径 no CoM (fm) | 2.69996432 | 2.69986142 | +0.00010290 |</p>
+<p>| 占据能级 MAE (MeV) | - | - | 0.00515395 |</p>
+<p>| 占据能级 RMSE (MeV) | - | - | 0.00575287 |</p>
+<figure><img src="images/vs_dpl_scf.png" alt="S/V 对比"></figure>
+<p>该结果只证明当前离散球对称 PKDD/O16 案例通过内部和外部验证，不能代替 25 案例统计，也不能证明三维或 RHF 扩展已经成立。</p></section><section id="OUTPUT_SCHEMA"><h1>输出文件定义</h1>
+<h2>核心文件</h2>
+<p>| 文件 | 内容 | 是否必须 |</p>
+<p>|---|---|---|</p>
+<p>| `model.pt` | 网络 state dict、训练摘要、checkpoint 格式版本 | 是 |</p>
+<p>| `summary.json` | 核素、结构、超参数、能量、gate 和诊断 | 是 |</p>
+<p>| `history.csv` | 每 epoch 能量、驻定性、梯度、学习率和刷新标记 | 是 |</p>
+<p>| `dpl_hamiltonian.npz` | `r`、四通道名和 `(4,Nr)` 局域势栈 | 是 |</p>
+<p>| `density_profiles.npz` | 四个中子/质子标量与矢量密度 | 是 |</p>
+<p>| `physical_components.npz` | S、V0、V3、VC 分量 | 是 |</p>
+<p>| `density_matrix_factors.npz` | 各量子数分块的系数、因子和占据 | 是 |</p>
+<p>| `final_wavefunctions.npz` | 最终谱验证态，不参与普通 epoch | 是 |</p>
+<p>`dpl_hamiltonian.npz` 的通道顺序严格为 `vps_n, vms_n, vps_p, vms_p`，单位为 `fm^-1`。绘图时恢复 MeV 制的 S/V，不可直接把四通道当 MeV。</p>
+<h2>诊断文件</h2>
+<ul>
+<li>`formula_invariants.json`：粒子数、正交、幂等和训练求解器计数。</li>
+<li>`training_solver_counts.json`：初始化、刷新、最终验证的对角化次数和耗时。</li>
+<li>`final_spectral_validation.json`：神经密度和最终谱密度的相对误差。</li>
+<li>`field_diagnostics.npz`：介子场、库仑场、重排势和物理势分量。</li>
+<li>`action_diagnostics.npz`：动能和各相互作用能分解。</li>
+</ul>
+<h2>SCF 对比目录</h2>
+<ul>
+<li>`detailed_comparison.json`：机器可读的完整差异。</li>
+<li>`DETAILED_COMPARISON.md`：组会可读表格。</li>
+<li>`core1204_scf_profiles.npz`：SCF 势、场和密度。</li>
+<li>`occupied_levels.csv`：占据单粒子能级逐态差异。</li>
+<li>`scf_history.csv`：SCF 收敛过程。</li>
+<li>`vs_dpl_scf.png/pdf/data.npz`：S/V 图和原始曲线。</li>
+</ul>
+<h2>Checkpoint 兼容性</h2>
+<p>v1 格式名为 `dpl-rmf-density-matrix-v1`。评估器兼容当前旧式 density-matrix checkpoint，但缺失的修正尺度按 0.01 解释。模型类型、核素或张量形状不一致时严格拒绝加载。</p></section><section id="DEVELOPER_GUIDE"><h1>开发与 RHF 扩展指南</h1>
+<h2>模块边界</h2>
+<ul>
+<li>`models/density_matrix_net.py`：只负责可训练参数化和硬约束投影。</li>
+<li>`backends/density_matrix_rmf.py`：把密度矩阵映射为密度、能量、哈密顿量和驻定残差。</li>
+<li>`functionals/pkdd_action.py`：参数集、耦合、场方程、重排项、势、能量和观测量。</li>
+<li>`training/density_matrix_trainer.py`：优化器、刷新调度、gate、checkpoint 和输出。</li>
+<li>`cli/`：参数解析、评估、SCF 对比、批量调度和绘图，不复制物理公式。</li>
+</ul>
+<h2>增加参数集</h2>
+<p>在 `RMF_PARAMETER_DATA` 中增加完整核子质量、介子质量、饱和密度、耦合常数和密度依赖参数；增加 Core 参数编号映射；编写耦合值、导数、势通道和闭壳层 SCF 对比测试。不得通过复制其他参数集缺省值补字段。</p>
+<h2>数值不变量</h2>
+<p>任何修改必须保持四通道顺序、统一径向度量、七点 ADF 的前后向 Dirac 块、原点处理、无穷远边界、质心修正口径和 float64。改变积分或微分时必须同时验证能量自动微分与离散 Hamiltonian 一致。</p>
+<h2>RHF 扩展接口</h2>
+<p>`functionals/rhf_interfaces.py` 预留 `sigma_fock`、`omega_fock`、`rho_tensor`、`pi_pv` 和轨道源 `X_a/Y_a`。真正 RHF 需要非局域密度矩阵核和轨道相关 Fock 泛函，不能把局域 RMF 势改名为 RHF。建议新增独立 `RHFBackend` 实现相同的 `evaluate(blocks)` 契约。</p>
+<h2>测试策略</h2>
+<p>公式测试覆盖参数、耦合导数、场方程、重排势和能量梯度；结构测试覆盖 SiLU、硬约束和无逐步 eigensolver；集成测试覆盖短训练、checkpoint 往返和 Core 动态库；验收测试固定 PKDD/O16 发布结果容差。</p></section><section id="TROUBLESHOOTING"><h1>故障排查</h1>
+<h2>CUDA 不可用</h2>
+<p>运行 `dpl-rmf-check --require-cuda`。若 PyTorch 显示 CPU 构建，重新安装匹配驱动的 CUDA 构建。不要仅通过设置 `CUDA_VISIBLE_DEVICES` 假定 CUDA 已启用。</p>
+<h2>Core 动态库找不到</h2>
+<p>使用 `--core-dir` 或设置 `DPL_RHF_CORE_DIR`。若库存在但加载失败，执行 `ldd Core-1204/librhf.so` 检查 `libgfortran.so.5`、`libgomp.so.1` 和 `libquadmath.so.0`。</p>
+<h2>能量下降但 gate 失败</h2>
+<p>这表示网络没有达到变分驻点。优先检查归一化驻定残差、学习率、驻定权重和刷新间隔，不要根据 SCF 能量接近手工选择 checkpoint。</p>
+<h2>出现假态或谱密度不一致</h2>
+<p>确认 `density-matrix` 模式、正能投影和最终谱验证已启用。减小刷新间隔并检查七点 ADF 两个微分块。自动微分只保证当前离散表达式的梯度正确，不会纠正错误 Hamiltonian 或缺失 no-sea 限制。</p>
+<h2>NaN 或梯度爆炸</h2>
+<p>先降低学习率，再检查 `--density-correction-scale` 和梯度裁剪。保留 float64。若修改了密度公式，检查 `r=0` 外推和所有分母的正规化处理。</p>
+<h2>多进程 GPU 更慢</h2>
+<p>每卡三个进程是最大调度配置，不是性能保证。398x398 的少量谱刷新在 CPU LAPACK 上执行，而网络和可微场在 GPU 上执行。对 O16 小模型，CPU 可能更快。</p>
+<h2>固定势 Core 总能量异常</h2>
+<p>固定 DPL 势调用中的 Core 场仍来自初始化状态，该总能量没有与 DPL 密度同步，只能读取单粒子能级。使用 DPL 可微泛函输出作为 DPL 总能量。</p></section><section id="REFERENCES"><h1>参考文献与公式映射</h1>
+<p>发布包不分发论文和书籍 PDF。用户可在本地建立 `references/` 目录存放合法副本，该目录不参与程序运行。</p>
+<p>1. Physical Review Letters 133, 076401 (2024)，AI2DFT/深度学习变分思想。对应网络参数化变分对象、物理泛函提供无监督梯度、外部参考不进入损失的总体方法。</p>
+<p>2. Zhang Ying 等，Chinese Physics C 49, 014106 (2025)。对应球对称 Dirac 方程的非对称有限差分；本程序使用七点扩展 ADF，并显式构造前后向两个微分块。</p>
+<p>3. 当前项目核物理教材的 RMF 章节。对应标量/矢量密度、介子场方程、径向 Dirac 方程、能量泛函、重排项和核半径定义。</p>
+<p>4. Core-1204 Fortran 实现。用于核对参数、通道符号、网格、积分口径、重排势和最终外部 SCF 数值，但其 SCF 迭代不进入网络损失。</p>
+<p>文档中的“严格”指离散程序与上述 RMF 方程、通道定义及硬约束一致，不表示当前程序已覆盖配对、形变或 RHF 非局域交换。</p></section></main></body></html>

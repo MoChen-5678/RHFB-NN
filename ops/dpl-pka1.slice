@@ -1,0 +1,6 @@
+[Unit]
+Description=Aggregate memory protection for PKA1 training
+
+[Slice]
+MemoryHigh=30G
+MemoryMax=35G

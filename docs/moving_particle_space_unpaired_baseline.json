@@ -1,0 +1,31 @@
+{
+  "model_scope": "8-state moving-Q toy before active-level compression; full six-orbital canonical chart; D1S strength 1; not production PKA1",
+  "candidate_full_projector_response": {
+    "energy": 3.2199999999795934,
+    "normal_energy": 3.220000000046655,
+    "D1S_pair_energy": -6.706131533020152e-11,
+    "chi_frobenius": 6.271135786168935e-06,
+    "number": 3.0000000000351004,
+    "number_abs_residual": 3.51003670573391e-11,
+    "R_purity_abs_frobenius": 5.578943729020392e-15,
+    "field_density_scalar": 3.8773364306025655e-08,
+    "positive_negative_bare_coupling_norm": 0.06224949798994366,
+    "positive_negative_field_coupling_norm": 5.792693912235113e-10,
+    "projector_sign_exact_frobenius": 1.0619911341642493e-10,
+    "projector_frame_fixed_point_residual": 1.2210617504508747e-15,
+    "projector_motion_from_bare": 6.273384002429183e-11,
+    "bare_negative_basis_density_support": 3.4895967291236725e-11,
+    "solver_converged": true,
+    "solver_residual_max": 6.296533922164546e-08,
+    "auxiliary_field_constraint_abs": 6.753527022032346e-14
+  },
+  "interpretation": "The converged root is effectively unpaired and does not test the nonzero pairing projector-response question.",
+  "history_note": "This first scale-one run preceded serialization of solver history. Its terminal metrics are retained here; no iteration history is reconstructed or claimed.",
+  "recoverability": {
+    "final_parameters_saved": false,
+    "rho_chi_projector_arrays_saved": false,
+    "candidate_eigensolver_guard_count_recorded": false,
+    "moving_response_pair_coupling_numeric_recorded": false,
+    "note": "This baseline predates snapshot instrumentation; only the terminal scalar metrics above were retained."
+  }
+}

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=60.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dpl-rhf-no-refresh"
+version = "2.0.0"
+description = "Full-space density-matrix neural RHF solver without eigensolves or subspace refresh"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24,<3",
+  "torch==2.5.1",
+  "matplotlib>=3.7",
+  "scipy>=1.10",
+  "sympy>=1.12",
+]
+
+[project.scripts]
+dpl-rhf-train = "dpl_rhf.cli.rhf_train:main"
+dpl-rhf-evaluate = "dpl_rhf.cli.rhf_evaluate:main"
+dpl-rhf-plot = "dpl_rhf.cli.rhf_plot:main"
+dpl-rhf-compare-core = "dpl_rhf.cli.rhf_compare_core:main"
+dpl-rhf-compare-core1204 = "dpl_rhf.cli.compare_rhf_core1204:main"
+
+[tool.setuptools.packages.find]
+include = ["dpl_rhf*"]
+
+[tool.setuptools.package-data]
+dpl_rhf = ["py.typed"]
