@@ -1,61 +1,131 @@
-# 2.0.0-DPL_RMF-fast-1D
+# RHFB-NN：无刷新神经网络相对论 Hartree-Fock-Bogoliubov（PKA1 + D1S）
 
-本目录为 `variants/blocked-rhfb` 独立开发副本。奇核扩展目前提供组件和
-无海算法验收原型，尚未通过完整 PKA1 奇核计算验收。
-实现范围、备份恢复、试运行及未完成项目见
-[奇核扩展实施记录](docs/BLOCKED_RHFB_IMPLEMENTATION.md)。
+用神经网络变分求解球形原子核的密度依赖相对论 Hartree-Fock-Bogoliubov
+（DDRHFB）基态：粒子-空穴道为完整 PKA1，粒子-粒子道为固定强度 Gogny D1S
+配对，奇核用显式阻塞。训练过程中**不对角化 Dirac 或 Bogoliubov
+Hamiltonian、不刷新子空间**；Fortran S-RHFB-C 仅在训练结束后作参考对照。
 
-这是与原 `DFT-RHF` 完全隔离的正式RMF版本。它保留经过核对的 RMF/RHF
-能量泛函，但删除了训练中的正能子空间对角化、子空间刷新和优化器重置。
+无配对的 RHF/RMF 主程序是独立仓库
+[RHF-NN](https://github.com/MoChen-5678/RHF-NN)，本仓库包含其完整副本并在其上扩展。
 
-网络直接在固定的完整 Dirac 径向网格空间生成占据密度因子
-`P = Q f Q^T`。QR 严格实施正交约束；RMF/RHF 总能量、全空间
-Euler-Lagrange 驻定残差和逆 Hamiltonian 无海约束共同构成无监督物理损失。
-SCF/Core-1204 数据只允许在训练结束后验证。
+## 方法概要
 
-## 快速开始
+- **正则基变分**：每个 `(q, kappa)` 块由网络给出正则轨道因子 `Q` 与占据
+  logits，`v^2` 由 Fermi 位移保证粒子数；配对张量
+  `kappa = Q (u v) Q^T`，阻塞态取 `(2j-1)` 等填充。
+- **能量**：完整 PKA1 Hartree + Fock（含 rho-tensor、pion-PV、重排）与
+  J=0 Gogny-D1S 有限程配对能（双高斯多极核，保留全部 Dirac 分量）。
+- **无海近似**：网络因子在 QR 前乘以正能投影
+  `P_+ = [1 + sign(h - W)]/2`（`W = -M`），sign 用 Newton-Schulz 迭代，
+  只做矩阵乘法；投影子由当前场构造并固定，最终评估时迭代至自洽。
+- **批量 Fock 与配对**：块对与 Dirac 分量的交换和配对收缩按
+  (种类, kappa, 分量) 批量逐元素计算（`dpl_rhf/rhf/fock_batched.py`、
+  `SphericalD1SPairing.energy`）；逐对循环保留为参考实现。
+
+## 精度说明（与 Fortran S-RHFB-C 对比）
+
+同 PKA1+D1S、同 0.1 fm / 20 fm 网格，不含质心修正（2026-10-28 数据报告）：
+
+| 核 | E/A NN (MeV) | E/A Ref (MeV) | Δ(E/A) (keV) | r_ch NN / Ref (fm) | 能级 MAE (MeV) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| O16 | -7.34572 | -7.34892 | +3.20 | 2.8607 / 2.8588 | 0.017 |
+| O17 | -7.23310 | -7.23287 | -0.23 | 2.8470 / 2.8458 | 0.024 |
+| O18 | -7.29154 | -7.29958 | +8.04 | 2.8360 / 2.8374 | 0.061 |
+| O19 | -7.14750 | -7.14642 | -1.08 | 2.8259 / 2.8273 | 0.078 |
+| Ca40 | -8.33649 | -8.33772 | +1.23 | 3.5478 / 3.5479 | 0.007 |
+| Ca48 | -8.49344 | -8.47872 | -14.71 | 3.5102 / 3.5087 | 0.086 |
+| Sn132 | -8.30409 | -8.29735 | -6.74 | 4.7049 / 4.7063 | 0.042 |
+| Pb208 | -7.83902 | -7.83561 | -3.41 | 5.5162 / 5.5154 | 0.027 |
+| Pb210 | -7.79899 | -7.79777 | -1.22 | 5.5288 / 5.5304 | 0.036 |
+
+全部结果的训练对角化次数为 0，海泄漏 ≤1e-10。已知差异：O18、Pb210 的
+中子配对能弱于参考（疑为正则空间截断，待收敛扫描）；闭壳 Ca48/Sn132/Pb208
+的 NN 能量比 S-RHFB-C 低 3–15 keV，而 NN 为变分上界，提示参考程序在重核
+上受 DWS 基截断影响。
+
+**数值实现一致性**
+
+| 检查 | 结果 |
+| --- | ---: |
+| 批量 Fock 与流式/逐对 Fock：总能量差（Sn132、Pb248） | 4.5e-13 MeV |
+| 批量 Fock 与流式 Fock：网络梯度相对差 | ~1e-15 |
+| 批量 D1S 配对能与逐对循环：能量 / 梯度相对差 | < 1e-12 |
+
+## 2026-10-31 性能更新
+
+批量 Fock 取代逐 kappa 对流式计算成为默认路径，结果与流式一致（能量差
+<1e-12 MeV，梯度相对差 ~1e-15）。A100 40GB 每轮（前向 + 反向）：
+
+| 情形 | 流式（旧） | 批量（新） | 峰值显存（新） |
+| --- | ---: | ---: | ---: |
+| Sn132（capacity 184/58，kappa 8/7） | 16.2 s | 0.59 s | 7.3 GiB |
+| Pb248（capacity 240/92，kappa 8/7） | 22.3 s | 0.77 s | 8.3 GiB |
+
+drip-line 生产链实际训练约 0.7–0.8 s/轮（旧版 16–20 s/轮）。
+`--fock-stream-devices` 仍可用；一旦设置，流式路径优先于批量路径。
+
+## 安装
 
 ```bash
-conda env create -f environment.yml
-conda activate dpl-rmf
+conda env create -f environment-rhf.yml
+conda activate dpl-rhf
 pip install -e .
-
-# PKDD RMF
-dpl-no-refresh train-rmf --model PKDD --z 8 --n 8 --epochs 500 \
-  --device cuda --out outputs/no_refresh/PKDD/O16
-
-# PKA1 RHF
-dpl-no-refresh train-rhf --model PKA1 --z 8 --n 8 --epochs 500 \
-  --device cuda --out outputs/no_refresh/PKA1/O16
 ```
 
-`--density-refresh-interval` 和 `--refresh-interval` 必须为零，传入其他值会
-直接报错。训练日志应始终满足：
+## 训练与评估
 
-```text
-eigensolve_count = 0
-refresh_count = 0
-training_dirac_solves = 0
-minimum_branch_score > 0
-```
+`dpl-rhfb-sph-train` 启动时会检查资源限制，必须在下列任一启动器内运行：
 
-## Core 验证
-
-RHF Hamiltonian 的严格定义、闭合数据和验收门控见
-[`docs/RHF_HAMILTONIAN_DEFINITION_AND_AUDIT.md`](docs/RHF_HAMILTONIAN_DEFINITION_AND_AUDIT.md)。
+- `scripts/run_rhfb_limited.py`：cgroup v2 内核内存限制（本地）；
+- `scripts/run_rhfb_procguard.py`：进程级采样守护（无 cgroup 委派的主机）。
+  需设置允许使用的 GPU，例如 `RHFB_AUTHORIZED_GPUS=0,1`。
 
 ```bash
-dpl-no-refresh compare-core --kind rmf \
-  --result outputs/no_refresh/PKDD/O16 --model PKDD \
-  --z 8 --n 8 --core-dir ../Core-1204 \
-  --out outputs/no_refresh/PKDD/O16/core
+export RHFB_AUTHORIZED_GPUS=0
+python scripts/run_rhfb_procguard.py --memory-mib 8192 --gpu-indices 0 \
+  --gpu-memory-mib 24576 --timeout-seconds 86400 \
+  --report outputs/execution/train_Pb208.json -- \
+  python -u -m dpl_rhf.cli.rhfb_spherical_train --z 82 --n 126 \
+    --capacity-n 240 --capacity-p 92 --kappa-limits 8 7 \
+    --epochs 1500 --lr 2e-3 --logit-lr 5e-2 \
+    --device cuda --cuda-budget-mib 24576 \
+    --out outputs/rhfb_spherical/Pb208
 
-dpl-no-refresh compare-core --kind rhf \
-  --result outputs/no_refresh/PKA1/O16 --model PKA1 \
-  --z 8 --n 8 --core-dir ../Core-1204 \
-  --out outputs/no_refresh/PKA1/O16/core
+# 训练后自洽评估（迭代无海投影与配对符号至收敛）
+python scripts/run_rhfb_procguard.py ... -- \
+  python -u -m dpl_rhf.cli.rhfb_spherical_train --z 82 --n 126 \
+    --capacity-n 240 --capacity-p 92 --kappa-limits 8 7 \
+    --device cuda --cuda-budget-mib 24576 \
+    --evaluate-only outputs/rhfb_spherical/Pb208/training_checkpoint.pt \
+    --evaluate-state last --out outputs/rhfb_spherical/Pb208_eval
 ```
 
-完整理论、数据流、损失、输出和实验验收标准见
-[无刷新求解器原理与工作流程](docs/NO_REFRESH_THEORY_AND_WORKFLOW.md)。
-原刷新版本位于独立的 `DFT-RHF` 目录及冻结归档中，本项目不覆盖它。
+常用选项：`--block-n/--block-p`（阻塞轨道，奇核）、`--pairing {d1s,none}`、
+`--initial-model`（从相邻核热启动）、`--resume`、`--graph-offload`。
+
+**drip-line 链**：`scripts/remote_gpu04_dripline.sh` 在 8 张 GPU 上按同位素链
+逐核训练并评估（O、Sn、Pb），以相邻核热启动；已训练或已评估的核在重启时
+自动跳过，未完成的核从检查点续训。
+
+## 测试
+
+```bash
+python -m pytest -q dpl_rhf/tests/test_spherical_d1s_pairing.py \
+  dpl_rhf/tests/test_spherical_rhfb_backend.py dpl_rhf/tests/test_fock_streaming.py \
+  dpl_rhf/tests/test_no_refresh_solver.py dpl_rhf/tests/test_density_matrix_rhf.py
+```
+
+## 文档与论文
+
+- [实施记录](docs/BLOCKED_RHFB_IMPLEMENTATION.md)、[物理决策](docs/PHYSICS_DECISIONS_20261015.md)
+- [无海 sign 响应审查](docs/NO_SEA_SIGN_RESPONSE_REVIEW_20261015.md)
+- [无刷新求解器原理](docs/NO_REFRESH_THEORY_AND_WORKFLOW.md)
+- 论文源文件：`paper/`（`paper/long_version_20261028/` 为长版本）
+
+## 未完成项目
+
+- O20、Ca41、Ca42、Ca44 尚未计算；O18 正则空间收敛扫描未运行。
+- Sn、Pb 同位素 drip-line 链仍在远程运行。
+- 当前为球形实现；形变与时间奇场的一般奇核推广见实施记录。
+
+训练输出、检查点、参考文献 PDF 与数据压缩包不纳入版本库（见 `.gitignore`）。
