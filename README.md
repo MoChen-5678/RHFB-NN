@@ -115,12 +115,11 @@ python -m pytest -q dpl_rhf/tests/test_spherical_d1s_pairing.py \
   dpl_rhf/tests/test_no_refresh_solver.py dpl_rhf/tests/test_density_matrix_rhf.py
 ```
 
-## 文档与论文
+## 文档
 
 - [实施记录](docs/BLOCKED_RHFB_IMPLEMENTATION.md)、[物理决策](docs/PHYSICS_DECISIONS_20261015.md)
 - [无海 sign 响应审查](docs/NO_SEA_SIGN_RESPONSE_REVIEW_20261015.md)
 - [无刷新求解器原理](docs/NO_REFRESH_THEORY_AND_WORKFLOW.md)
-- 论文源文件：`paper/`（`paper/long_version_20261028/` 为长版本）
 
 ## 未完成项目
 

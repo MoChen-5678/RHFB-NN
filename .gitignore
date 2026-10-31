@@ -33,3 +33,6 @@ group_meeting_package_*/
 *.pdf
 *.png
 *.zip
+
+# Manuscript sources are private.
+paper/
