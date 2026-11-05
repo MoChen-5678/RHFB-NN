@@ -107,6 +107,24 @@ python scripts/run_rhfb_procguard.py ... -- \
 逐核训练并评估（O、Sn、Pb），以相邻核热启动；已训练或已评估的核在重启时
 自动跳过，未完成的核从检查点续训。
 
+**按 Σ± 收敛停止**（代替固定轮数）：
+
+| 选项 | 含义 |
+| --- | --- |
+| `--converge-sigma-kev 10` | 中子、质子的 Σ₊ = V+S、Σ₋ = V−S 在全部内部网格点上的最大变化小于该值即视为收敛；`--epochs` 变为安全上限 |
+| `--convergence-window 10` | 变化取当前与 10 个 epoch 前之差 |
+| `--convergence-patience 20` | 上述条件须连续保持 20 个 epoch，避免振荡场偶然跌破阈值 |
+| `--sigma-lr-patience 100` | Σ± 变化 100 个 epoch 无 10% 改善则学习率减半（代替能量平台调度） |
+| `--min-lr 2e-5` | 学习率下限，防止学习率停滞造成“假收敛” |
+| `--reset-lr` | 与 `--resume` 一起使用：从初始学习率重新开始调度，保留模型、优化器矩与历史 |
+
+`history.csv` 逐轮记录 `sigma_step_change_kev`、`sigma_window_change_kev` 与连续满足轮数；
+`summary.json` 的 `convergence` 字段记录是否收敛、总轮数、最终变化与学习率。
+`scripts/remote_converge_sigma.py` 从各运行自身的检查点续训全部核直至收敛并自洽评估
+（`--tag v2 --patience 20 --sigma-lr-patience 100`）；`scripts/build_rhfb_observables.py`
+将评估结果与 Fortran 参考整理为观测量、单粒子能级、各耦合道能量三张 CSV。
+2026-11-05 全部 70 个核在该判据下收敛（额外 29–1019 轮，停止时 Σ± 10 轮变化 ≤ 9.3 keV）。
+
 ## 测试
 
 ```bash
@@ -124,7 +142,6 @@ python -m pytest -q dpl_rhf/tests/test_spherical_d1s_pairing.py \
 ## 未完成项目
 
 - O20、Ca41、Ca42、Ca44 尚未计算；O18 正则空间收敛扫描未运行。
-- Sn、Pb 同位素 drip-line 链仍在远程运行。
 - 当前为球形实现；形变与时间奇场的一般奇核推广见实施记录。
 
 训练输出、检查点、参考文献 PDF 与数据压缩包不纳入版本库（见 `.gitignore`）。

@@ -30,7 +30,21 @@ def build_parser() -> argparse.ArgumentParser:
                         help="warm start from model_final.pt with identical canonical blocks")
     parser.add_argument("--kappa-limits", type=int, nargs=2, default=(5, 4),
                         metavar=("NEG", "POS"), help="keep -NEG <= kappa <= POS")
-    parser.add_argument("--epochs", type=int, default=600)
+    parser.add_argument("--epochs", type=int, default=600,
+                        help="fixed epochs, or the safety cap with --converge-sigma-kev")
+    parser.add_argument("--converge-sigma-kev", type=float, default=None,
+                        help="stop when Sigma_+ and Sigma_- (n, p) change by less than this "
+                             "many keV over --convergence-window epochs")
+    parser.add_argument("--convergence-window", type=int, default=10)
+    parser.add_argument("--convergence-patience", type=int, default=1,
+                        help="consecutive epochs the Sigma tolerance must hold")
+    parser.add_argument("--sigma-lr-patience", type=int, default=0,
+                        help="halve the learning rates after this many epochs without a 10%% "
+                             "improvement of the windowed Sigma change (0: energy plateau)")
+    parser.add_argument("--min-lr", type=float, default=0.0,
+                        help="floor of the plateau learning-rate schedule")
+    parser.add_argument("--reset-lr", action="store_true",
+                        help="on --resume, restart from --lr/--logit-lr with a fresh schedule")
     parser.add_argument("--lr", type=float, default=1.0e-3)
     parser.add_argument("--logit-lr", type=float, default=2.0e-2)
     parser.add_argument("--energy-weight", type=float, default=2.0)
@@ -100,6 +114,12 @@ def main(argv=None) -> None:
         seed=args.seed, resume=args.resume, graph_offload=args.graph_offload,
         alignment_weight=args.alignment_weight, alignment_epochs=args.alignment_epochs,
         initial_model=args.initial_model,
+        convergence_sigma_kev=args.converge_sigma_kev,
+        convergence_window=args.convergence_window,
+        convergence_patience=args.convergence_patience,
+        sigma_lr_patience=args.sigma_lr_patience,
+        min_learning_rate=args.min_lr,
+        reset_learning_rate=args.reset_lr,
     )
     if args.evaluate_only:
         summary = evaluate_saved(backend, config, args.evaluate_only, args.out,

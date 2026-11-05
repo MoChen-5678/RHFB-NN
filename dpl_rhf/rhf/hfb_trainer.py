@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from contextlib import nullcontext
 from dataclasses import asdict, dataclass
 import copy
@@ -50,6 +51,36 @@ class RHFBTrainingConfig:
     # Warm start from a converged state with the same canonical blocks (e.g. a
     # neighbouring isotope); the Fermi shift restores the particle numbers.
     initial_model: str | None = None
+    # Self-consistency stop: training ends once the local mean fields
+    # Sigma_+ = V+S and Sigma_- = V-S of both species change by less than
+    # ``convergence_sigma_kev`` (max over the mesh) across the last
+    # ``convergence_window`` epochs; ``epochs`` is then only a safety cap.
+    # None keeps the fixed-epoch schedule.
+    convergence_sigma_kev: float | None = None
+    convergence_window: int = 10
+    # The tolerance must hold for this many consecutive epochs, so a single
+    # dip of an oscillating field does not count as convergence.
+    convergence_patience: int = 1
+    # Field-driven schedule: halve the learning rates when the windowed field
+    # change has not improved by 10% for this many epochs (0 disables; the
+    # energy plateau schedule is then used instead).
+    sigma_lr_patience: int = 0
+    # Floor of the plateau schedule, so a stalled learning rate cannot fake
+    # convergence of the fields.
+    min_learning_rate: float = 0.0
+    # On resume, restart from the configured learning rates and a fresh
+    # plateau schedule (the model, optimizer moments and history are kept).
+    reset_learning_rate: bool = False
+
+
+def _sigma_fields_mev(backend, result) -> np.ndarray:
+    """Sigma_+ and Sigma_- of n and p on the interior mesh, MeV, shape (4, N)."""
+    hbar_c = backend.params.hbar_c
+    fields = result.rhf.fields
+    return np.stack([
+        fields[f"Sigma_{sign}_{q}_total_local"][1:-1].detach().cpu().numpy() * hbar_c
+        for q in ("n", "p") for sign in ("plus", "minus")
+    ])
 
 
 def build_network(backend: SphericalRHFBBackend, config: RHFBTrainingConfig) -> CanonicalHFBNet:
@@ -117,7 +148,8 @@ def _inverse(backend, result, config, alignment=0.0):
 
 def save_result(out: Path, backend: SphericalRHFBBackend, network: CanonicalHFBNet,
                 result: SphericalRHFBResult, config: RHFBTrainingConfig,
-                history: list[dict], inverse, projector_info: dict | None = None) -> dict:
+                history: list[dict], inverse, projector_info: dict | None = None,
+                convergence: dict | None = None) -> dict:
     rhf = result.rhf
     a = backend.case.a
     terms = {name: float(value.detach().cpu()) for name, value in rhf.action_terms.items()}
@@ -165,6 +197,7 @@ def save_result(out: Path, backend: SphericalRHFBBackend, network: CanonicalHFBN
         "diagnostics": result.diagnostics,
         "config": asdict(config),
         "epochs_completed": len(history) - 1 if history else 0,
+        "convergence": convergence,
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2))
     densities = {name: value.detach().cpu().numpy() for name, value in rhf.densities.items()
@@ -224,8 +257,10 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
          "lr": config.learning_rate},
         {"params": list(network.occupation_logits), "lr": config.logit_learning_rate},
     ])
+    floor = config.min_learning_rate
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=50, threshold=1.0e-3)
+        optimizer, mode="min", factor=0.5, patience=50, threshold=1.0e-3,
+        min_lr=[floor, floor * config.logit_learning_rate / config.learning_rate])
     history: list[dict] = []
     best_monitor = float("inf")
     best_state = copy.deepcopy(network.state_dict())
@@ -245,13 +280,20 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
         saved = torch.load(checkpoint, map_location=backend.device, weights_only=False)
         network.load_state_dict(saved["model_state"])
         optimizer.load_state_dict(saved["optimizer_state"])
-        scheduler.load_state_dict(saved["scheduler_state"])
+        if config.reset_learning_rate:
+            for group, lr in zip(optimizer.param_groups,
+                                 (config.learning_rate, config.logit_learning_rate)):
+                group["lr"] = lr
+        else:
+            scheduler.load_state_dict(saved["scheduler_state"])
         history = saved["history"]
         best_monitor, best_state = saved["best_monitor"], saved["best_state"]
         stationarity_reference = saved["stationarity_reference"]
         energy_reference = saved["energy_reference"]
         weight_s = saved["stationarity_weight"]
         start_epoch = int(saved["next_epoch"])
+        # The epoch at which a run stopped is evaluated again on resume.
+        history = [row for row in history if int(row["epoch"]) < start_epoch]
         projectors = [p.to(backend.device) for p in saved["projectors"]]
         backend.pair_signs = [p.to(backend.device) for p in saved["pair_signs"]]
         print(f"resuming RHFB training at epoch {start_epoch}", flush=True)
@@ -265,6 +307,13 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
     start = time.time()
     a = backend.case.a
     monitor = float("inf")
+    window = max(int(config.convergence_window), 1)
+    sigma_history: deque = deque(maxlen=window + 1)
+    converged = False
+    sigma_change_kev = float("nan")
+    streak = 0
+    best_sigma_change = float("inf")
+    epochs_since_best = 0
     for epoch in range(start_epoch, config.epochs + 1):
         optimizer.zero_grad(set_to_none=True)
         offload = (torch.autograd.graph.save_on_cpu(pin_memory=False)
@@ -336,6 +385,29 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
             "learning_rate": optimizer.param_groups[0]["lr"],
             "elapsed_seconds": time.time() - start,
         }
+        sigma = _sigma_fields_mev(backend, result)
+        step_change = (1.0e3 * float(np.abs(sigma - sigma_history[-1]).max())
+                       if sigma_history else float("nan"))
+        sigma_history.append(sigma)
+        sigma_change_kev = (1.0e3 * float(np.abs(sigma - sigma_history[0]).max())
+                            if len(sigma_history) > window else float("nan"))
+        row["sigma_step_change_kev"] = step_change
+        row["sigma_window_change_kev"] = sigma_change_kev
+        if config.convergence_sigma_kev is not None and np.isfinite(sigma_change_kev):
+            streak = streak + 1 if sigma_change_kev < config.convergence_sigma_kev else 0
+            if config.sigma_lr_patience > 0:
+                if sigma_change_kev < 0.9 * best_sigma_change:
+                    best_sigma_change, epochs_since_best = sigma_change_kev, 0
+                else:
+                    epochs_since_best += 1
+                if epochs_since_best >= config.sigma_lr_patience:
+                    floors = (config.min_learning_rate,
+                              config.min_learning_rate * config.logit_learning_rate
+                              / config.learning_rate)
+                    for group, floor in zip(optimizer.param_groups, floors):
+                        group["lr"] = max(0.5 * group["lr"], floor)
+                    best_sigma_change, epochs_since_best = sigma_change_kev, 0
+        row["sigma_converged_streak"] = streak
         history.append(row)
         if np.isfinite(monitor) and monitor < best_monitor:
             best_monitor = monitor
@@ -344,9 +416,31 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
             print(f"epoch={epoch:5d} E/A={row['energy_per_a_no_com_mev']: .8f} "
                   f"Epair=({row['pairing_energy_n_mev']:.4f},{row['pairing_energy_p_mev']:.4f}) "
                   f"lam=({row['lambda_n_mev']:.3f},{row['lambda_p_mev']:.3f}) "
-                  f"S={stationarity:.3e} branch={row['minimum_branch_score']:.3f}", flush=True)
+                  f"S={stationarity:.3e} branch={row['minimum_branch_score']:.3f} "
+                  f"dSigma={sigma_change_kev:.3f}keV", flush=True)
             write_history(out / "history.csv", history)
-        if epoch == config.epochs:
+        converged = (config.convergence_sigma_kev is not None
+                     and streak >= max(int(config.convergence_patience), 1))
+        if converged or epoch == config.epochs:
+            if converged:
+                print(f"converged at epoch {epoch}: max |dSigma_+-| over {window} epochs "
+                      f"< {config.convergence_sigma_kev} keV for {streak} consecutive epochs "
+                      f"(last {sigma_change_kev:.4f} keV)", flush=True)
+            write_history(out / "history.csv", history)
+            # The converged (last) state is what the final evaluation uses.
+            payload = {
+                "next_epoch": epoch, "model_state": network.state_dict(),
+                "optimizer_state": optimizer.state_dict(),
+                "scheduler_state": scheduler.state_dict(), "history": history,
+                "best_monitor": best_monitor, "best_state": best_state,
+                "stationarity_reference": stationarity_reference,
+                "energy_reference": energy_reference, "stationarity_weight": weight_s,
+                "projectors": [p.cpu() for p in projectors],
+                "pair_signs": [p.cpu() for p in backend.pair_signs],
+            }
+            temporary = checkpoint.with_suffix(".pt.tmp")
+            torch.save(payload, temporary)
+            temporary.replace(checkpoint)
             break
         loss.backward()
         torch.nn.utils.clip_grad_norm_(network.parameters(), config.grad_clip)
@@ -355,7 +449,8 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
             {k: v.detach() for k, v in result.rhf.hamiltonians.items()})
         backend.update_pair_signs(result)
         del result, inverse, loss
-        scheduler.step(monitor)
+        if config.convergence_sigma_kev is None or config.sigma_lr_patience <= 0:
+            scheduler.step(monitor)
         if config.checkpoint_every > 0 and (epoch + 1) % config.checkpoint_every == 0:
             payload = {
                 "next_epoch": epoch + 1, "model_state": network.state_dict(),
@@ -375,10 +470,26 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
     result = inverse = loss = None
     if backend.device.type == "cuda":
         torch.cuda.empty_cache()
-    network.load_state_dict(best_state)
+    convergence = None
+    if config.convergence_sigma_kev is None:
+        network.load_state_dict(best_state)
+    else:
+        # Field-convergence mode keeps the last (converged or capped) state.
+        convergence = {
+            "criterion": "max |Sigma_+-(k) - Sigma_+-(k-window)| over n,p and the interior mesh",
+            "threshold_kev": config.convergence_sigma_kev,
+            "window_epochs": window,
+            "consecutive_epochs_required": max(int(config.convergence_patience), 1),
+            "sigma_lr_patience": config.sigma_lr_patience,
+            "final_learning_rate": optimizer.param_groups[0]["lr"],
+            "converged": bool(converged),
+            "final_change_kev": sigma_change_kev,
+            "epochs_completed": len(history) - 1,
+        }
     final, projectors, info = _self_consistent_evaluation(backend, network, projectors)
     inverse = _inverse(backend, final, config)
-    summary = save_result(out, backend, network, final, config, history, inverse, info)
+    summary = save_result(out, backend, network, final, config, history, inverse, info,
+                          convergence)
     return network, final, summary
 
 
@@ -409,5 +520,8 @@ def evaluate_saved(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, mo
         previous = Path(out_dir) / "history.csv"
     if previous.exists():
         import csv
-        history = [{k: float(v) for k, v in row.items()} for row in csv.DictReader(previous.open())]
+        # Columns added later (e.g. the Sigma convergence measures) are empty
+        # for epochs recorded before a resume.
+        history = [{k: float(v) if v not in ("", None) else float("nan") for k, v in row.items()}
+                   for row in csv.DictReader(previous.open())]
     return save_result(out, backend, network, result, config, history, inverse, info)
