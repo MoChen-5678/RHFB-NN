@@ -27,18 +27,23 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "outputs/rhfb_spherical"
 
 
-def train_arguments(summary: dict) -> list[str]:
+def train_arguments(summary: dict, opts=None) -> list[str]:
     cfg, space, nucleus = summary["config"], summary["canonical_space"], summary["nucleus"]
+    kappa_limits = list(space["kappa_limits"])
+    if opts is not None and opts.extend_kappa and nucleus["z"] >= opts.extend_kappa_min_z:
+        kappa_limits = [max(a, b) for a, b in zip(kappa_limits, opts.extend_kappa)]
     args = ["--z", str(nucleus["z"]), "--n", str(nucleus["n"]),
             "--pairing", "d1s" if summary["pairing"] else "none",
             "--capacity-n", str(space["capacities"]["n"]), "--capacity-p", str(space["capacities"]["p"]),
             "--extra-capacity", str(space["extra_capacity"]),
-            "--kappa-limits", *(str(k) for k in space["kappa_limits"]),
+            "--kappa-limits", *(str(k) for k in kappa_limits),
             "--lr", str(cfg["learning_rate"]), "--logit-lr", str(cfg["logit_learning_rate"]),
             "--energy-weight", str(cfg["energy_weight"]),
             "--stationarity-weight", str(cfg["stationarity_weight"]),
             "--inverse-weight", str(cfg["inverse_weight"]), "--branch-floor", str(cfg["branch_floor"]),
             "--hidden", str(cfg["hidden"]), "--depth", str(cfg["depth"]), "--seed", str(cfg["seed"])]
+    if opts is not None and opts.min_states_per_kappa:
+        args += ["--min-states-per-kappa", str(opts.min_states_per_kappa), "--pair-sign-init", "phase"]
     for species in ("n", "p"):
         if summary["blocking"].get(species) is not None:
             args += [f"--block-{species}", str(summary["blocking"][species])]
@@ -69,11 +74,19 @@ def run_job(args, gpu, set_name, run, status):
     previous = RUNS / stage_dir(args.previous_tag) / set_name / name
     source = previous if args.tag and (previous / "training_checkpoint.pt").exists() else run
     out.mkdir(parents=True, exist_ok=True)
-    if not (out / "training_checkpoint.pt").exists():
+    warm_model = None
+    if args.warm_from_tag is not None:
+        # A changed canonical space cannot resume a checkpoint; start a new
+        # optimization from the previous stage's final state instead.
+        warm_model = RUNS / (stage_dir(args.warm_from_tag) + "_eval") / set_name / name / "model_final.pt"
+        if not warm_model.exists():
+            status(f"{set_name}/{name} skipped: no warm-start model {warm_model}")
+            return
+    elif not (out / "training_checkpoint.pt").exists():
         shutil.copy2(source / "training_checkpoint.pt", out / "training_checkpoint.pt")
         if (source / "history.csv").exists():
             shutil.copy2(source / "history.csv", out / "history.csv")
-    common = train_arguments(summary) + ["--device", "cuda", "--cuda-budget-mib", str(args.gpu_mib)]
+    common = train_arguments(summary, args) + ["--device", "cuda", "--cuda-budget-mib", str(args.gpu_mib)]
     guard = [args.python, "scripts/run_rhfb_procguard.py", "--memory-mib", str(args.host_mib),
              "--gpu-indices", str(gpu), "--gpu-memory-mib", str(args.gpu_mib),
              "--timeout-seconds", str(args.timeout)]
@@ -82,12 +95,18 @@ def run_job(args, gpu, set_name, run, status):
     execution = ROOT / "outputs/execution"
     execution.mkdir(parents=True, exist_ok=True)
     if not (out / "summary.json").exists():
-        with open(source / "history.csv") as handle:
-            start_epoch = sum(1 for _ in handle) - 1
-        reset = ["--reset-lr"] if source == run else []
+        if warm_model is not None:
+            start_epoch = 0
+            # Resume only an interrupted run of this stage.
+            start = (["--resume"] if (out / "training_checkpoint.pt").exists()
+                     else ["--initial-model", str(warm_model)])
+        else:
+            with open(source / "history.csv") as handle:
+                start_epoch = sum(1 for _ in handle) - 1
+            start = ["--resume"] + (["--reset-lr"] if source == run else [])
         train = guard + ["--report", str(execution / f"{stage_dir(args.tag)}_train_{set_name}_{name}.json"), "--",
                          args.python, "-u", "-m", "dpl_rhf.cli.rhfb_spherical_train", *common,
-                         "--resume", *reset, "--min-lr", str(args.min_lr),
+                         *start, "--min-lr", str(args.min_lr),
                          "--converge-sigma-kev", str(args.tolerance_kev),
                          "--convergence-window", str(args.window),
                          "--convergence-patience", str(args.patience),
@@ -120,6 +139,11 @@ def main():
                         help="consecutive epochs the tolerance must hold")
     parser.add_argument("--sigma-lr-patience", type=int, default=0)
     parser.add_argument("--tag", default="", help="stage tag of the output directories")
+    parser.add_argument("--warm-from-tag", default=None,
+                        help="start from <stage>_eval/<set>/<nucleus>/model_final.pt (new space)")
+    parser.add_argument("--min-states-per-kappa", type=int, default=0)
+    parser.add_argument("--extend-kappa", type=int, nargs=2, default=None, metavar=("NEG", "POS"))
+    parser.add_argument("--extend-kappa-min-z", type=int, default=50)
     parser.add_argument("--previous-tag", default="", help="stage resumed by --tag")
     parser.add_argument("--min-lr", type=float, default=2.0e-5)
     parser.add_argument("--max-extra-epochs", type=int, default=20000)

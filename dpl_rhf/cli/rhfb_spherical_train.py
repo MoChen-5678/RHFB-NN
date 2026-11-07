@@ -26,6 +26,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--capacity-n", type=int, default=None,
                         help="absolute neutron canonical capacity (overrides --extra-capacity)")
     parser.add_argument("--capacity-p", type=int, default=None)
+    parser.add_argument("--min-states-per-kappa", type=int, default=0,
+                        help="add empty canonical states so every kappa block has at least this "
+                             "many (D1S pairing needs ~6 per block for 99%%)")
+    parser.add_argument("--pair-sign-init", choices=["phase", "ones"], default="phase",
+                        help="initial u v signs: (-1)^(|kappa|-1) (coherent pairing) or all +1")
     parser.add_argument("--initial-model", default=None,
                         help="warm start from model_final.pt with identical canonical blocks")
     parser.add_argument("--kappa-limits", type=int, nargs=2, default=(5, 4),
@@ -57,6 +62,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--alignment-epochs", type=int, default=0)
     parser.add_argument("--hidden", type=int, default=64)
     parser.add_argument("--depth", type=int, default=3)
+    parser.add_argument("--radial-basis-size", type=int, default=16,
+                        help="number of sinc radial input features (resolution of the orbitals)")
     parser.add_argument("--print-every", type=int, default=10)
     parser.add_argument("--checkpoint-every", type=int, default=10)
     parser.add_argument("--seed", type=int, default=20261026)
@@ -99,6 +106,8 @@ def main(argv=None) -> None:
         extra_capacity=args.extra_capacity, kappa_limits=tuple(args.kappa_limits),
         blocking={"n": args.block_n, "p": args.block_p},
         capacities={"n": args.capacity_n, "p": args.capacity_p},
+        min_states_per_kappa=args.min_states_per_kappa,
+        pair_sign_init=args.pair_sign_init,
     )
     if args.fock_stream_devices:
         devices = [torch.device(d) for d in args.fock_stream_devices.split(",")]
@@ -107,6 +116,7 @@ def main(argv=None) -> None:
         backend.functional.configure_fock_streaming(devices)
     config = RHFBTrainingConfig(
         epochs=args.epochs, hidden=args.hidden, depth=args.depth,
+        radial_basis_size=args.radial_basis_size,
         learning_rate=args.lr, logit_learning_rate=args.logit_lr,
         energy_weight=args.energy_weight, stationarity_weight=args.stationarity_weight,
         inverse_weight=args.inverse_weight, branch_floor=args.branch_floor,

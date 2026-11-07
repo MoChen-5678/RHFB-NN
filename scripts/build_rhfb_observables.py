@@ -134,6 +134,8 @@ def main():
                     "v2_fortran": r["v2"] if r else None, "e_fortran_mev": r["e_canonical"] if r else None,
                     "delta_fortran_mev": r["delta_canonical"] if r else None,
                     "e_diff_kev": 1000.0 * (lv["h_nn_mev"] - r["e_canonical"]) if r else None,
+                    "nn_energy_definition": "orbital_expectation_h_nunu_not_hamiltonian_eigenvalue",
+                    "state_matching": "species_kappa_saved_principal_not_wavefunction_overlap",
                 })
 
             dst = out / "nn" / set_name / nucleus

@@ -77,12 +77,17 @@ def independent_rhf_orbital_data(
     extra_capacity: int = 12,
     kappa_limits: tuple[int, int] | None = None,
     capacities: dict[str, int] | None = None,
+    min_states_per_kappa: int = 0,
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
     """Construct analytic occupied factors without an RMF/RHF eigenproblem.
 
     ``extra_capacity`` sets how many states beyond the particle number are
     represented (canonical space of the RHFB solver).  ``kappa_limits=(a, b)``
-    keeps only shells with ``-a <= kappa <= b``.
+    keeps only shells with ``-a <= kappa <= b``.  ``min_states_per_kappa``
+    then adds empty oscillator states so that every kappa block inside the
+    limits has at least that many canonical states: the finite-range D1S
+    pairing energy needs several states per block (about 6 for 99%), which a
+    capacity filled in shell order does not provide for high-|kappa| blocks.
     """
 
     records = []
@@ -121,6 +126,25 @@ def independent_rhf_orbital_data(
             represented += degeneracy
         if remaining:
             raise ValueError(f"shell table does not cover {species}={number}")
+        if min_states_per_kappa > 0:
+            if kappa_limits is None:
+                raise ValueError("min_states_per_kappa requires kappa_limits")
+            for kappa in [k for k in range(-kappa_limits[0], kappa_limits[1] + 1) if k != 0]:
+                angular = -kappa - 1 if kappa < 0 else kappa
+                present = sorted(rec[5] for rec in records if rec[0] == species and rec[3] == kappa)
+                principal = (present[-1] if present else 0)
+                while len(present) < min_states_per_kappa:
+                    principal += 1
+                    present.append(principal)
+                    twice_j = 2 * abs(kappa) - 1
+                    name = f"{principal}{_spectroscopic_letter(angular)}{twice_j}/2"
+                    q = (r / oscillator_length) ** 2
+                    radial = _generalized_laguerre(principal - 1, angular + 0.5, q)
+                    large = r ** (angular + 1) * np.exp(-0.5 * q) * radial
+                    large /= np.sqrt(np.trapezoid(large * large, r))
+                    records.append(
+                        (species, sign, name, kappa, angular, principal, 0.0, 2 * abs(kappa), large)
+                    )
 
     v0, av = -71.28, 11.1175
     radius_plus = 0.5 * (1.2334 + 1.2496) * a ** (1.0 / 3.0)

@@ -22,6 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+import numpy as np
 import torch
 
 from dpl_rhf.backends.base import NucleusCase
@@ -80,8 +81,14 @@ class SphericalRHFBBackend(DensityMatrixRHFBackend):
         params: RHFParameters | None = None,
         force: GognyD1SPairingForce = D1S_PAIRING,
         capacities: dict[str, int] | None = None,
+        min_states_per_kappa: int = 0,
+        pair_sign_init: str = "phase",
     ):
+        if pair_sign_init not in {"phase", "ones"}:
+            raise ValueError("pair_sign_init must be 'phase' or 'ones'")
         self.extra_capacity = int(extra_capacity)
+        self.min_states_per_kappa = int(min_states_per_kappa)
+        self.pair_sign_init = pair_sign_init
         self.capacities = dict(capacities) if capacities else None
         self.kappa_limits = tuple(int(v) for v in kappa_limits)
         self.blocking = {"n": None, "p": None, **(blocking or {})}
@@ -106,8 +113,16 @@ class SphericalRHFBBackend(DensityMatrixRHFBackend):
         # these signs once several canonical levels pair, so a sign is flipped
         # (with the same one-step lag as the no-sea projector) whenever
         # p_n Delta_nn > 0, i.e. when flipping lowers the energy to first order.
-        self.pair_signs = [torch.ones(len(s.principals), dtype=torch.float64, device=self.device)
-                           for s in self.block_specs]
+        # The time-reversal kernel carries the phase (-1)^((|k1|-1)+(|k2|-1));
+        # starting from u v ~ (-1)^(|k|-1) cancels it, i.e. all pairs attract
+        # coherently (the Fortran reference solution has this pattern).  Equal
+        # signs instead make even- and odd-|k| blocks cancel, which weakens the
+        # pairing field and lets the optimizer fall into the unpaired minimum.
+        self.pair_signs = [
+            torch.full((len(s.principals),),
+                       float((-1) ** (abs(s.kappa) - 1)) if pair_sign_init == "phase" else 1.0,
+                       dtype=torch.float64, device=self.device)
+            for s in self.block_specs]
         self.pair_sign_flips = 0
 
     # ------------------------------------------------------------------ blocks
@@ -115,7 +130,7 @@ class SphericalRHFBBackend(DensityMatrixRHFBackend):
         data, metadata = independent_rhf_orbital_data(
             self.case.z, self.case.n, self.r, self.params,
             extra_capacity=self.extra_capacity, kappa_limits=self.kappa_limits,
-            capacities=self.capacities,
+            capacities=self.capacities, min_states_per_kappa=self.min_states_per_kappa,
         )
         data = {key: torch.as_tensor(value, dtype=torch.float64, device=self.device)
                 for key, value in data.items()}
@@ -203,25 +218,44 @@ class SphericalRHFBBackend(DensityMatrixRHFBackend):
                     total = total + self.block_specs[i].degeneracy * self._occupation_terms(t, i)[0].sum()
                 return total
 
+            # The Fermi-shift bisection only involves a few dozen numbers per
+            # species; doing it on the host avoids hundreds of tiny device
+            # kernels and synchronizations per epoch (same algorithm and
+            # tolerance; the Newton step below still carries the gradient).
+            t_host, weight_host, scale_host, offset_host = [], [], [], []
+            for i in indices:
+                values = logits[i].detach().cpu().numpy()
+                mu = self.block_specs[i].degeneracy
+                scale_i = np.ones_like(values)
+                offset_i = np.zeros_like(values)
+                column = self.blocked_columns[i]
+                if column is not None:
+                    scale_i[column] = (mu - 2.0) / mu
+                    offset_i[column] = 1.0 / mu
+                t_host.append(values); weight_host.append(np.full_like(values, mu))
+                scale_host.append(scale_i); offset_host.append(offset_i)
+            t_host = np.concatenate(t_host); weight_host = np.concatenate(weight_host)
+            scale_host = np.concatenate(scale_host); offset_host = np.concatenate(offset_host)
+
+            def number_host(shift):
+                occupied = offset_host + scale_host / (1.0 + np.exp(-(t_host + shift)))
+                return float(np.sum(weight_host * occupied))
+
             low, high = -80.0, 80.0
-            with torch.no_grad():
-                if not float(number(low)) < target < float(number(high)):
-                    raise ValueError(f"{name}: canonical space cannot hold {target} particles")
-                for _ in range(200):
-                    middle = 0.5 * (low + high)
-                    if float(number(middle)) < target:
-                        low = middle
-                    else:
-                        high = middle
-                    if high - low < 1e-14:
-                        break
+            if not number_host(low) < target < number_host(high):
+                raise ValueError(f"{name}: canonical space cannot hold {target} particles")
+            for _ in range(200):
+                middle = 0.5 * (low + high)
+                if number_host(middle) < target:
+                    low = middle
+                else:
+                    high = middle
+                if high - low < 1e-14:
+                    break
             shift0 = 0.5 * (low + high)
-            with torch.no_grad():
-                slope = sum(
-                    self.block_specs[i].degeneracy
-                    * self._occupation_terms(logits[i].detach() + shift0, i)[2].sum()
-                    for i in indices
-                )
+            half = 0.5 * (t_host + shift0)
+            slope = torch.tensor(float(np.sum(weight_host * scale_host * (0.5 / np.cosh(half)) ** 2)),
+                                 dtype=torch.float64, device=self.device)
             # One Newton step attaches the implicit derivative d(shift)/d(logits).
             shift = shift0 + (target - number(shift0, detach=False)) / slope.clamp_min(1e-300)
             shifts[name] = float(shift0)

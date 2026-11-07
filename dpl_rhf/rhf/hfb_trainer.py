@@ -83,6 +83,100 @@ def _sigma_fields_mev(backend, result) -> np.ndarray:
     ])
 
 
+def _load_mapped_warm_start(network: CanonicalHFBNet, backend: SphericalRHFBBackend,
+                            warm: dict, warm_path: Path, *, new_logit: float = -14.0,
+                            logit_clip: float = 10.0) -> dict:
+    """Warm start a larger canonical space from a converged smaller one.
+
+    States are matched by (species, kappa, principal).  Because the QR
+    retraction orthonormalizes the columns of a block in principal order and
+    added states have higher principals, every matched orbital is reproduced
+    exactly; added states start from their analytic orbitals (zero head) with
+    a small pairing seed.  Logits are clipped so a collapsed (unpaired) state
+    can regrow its pair amplitudes, and pair signs are kept, new states taking
+    the sign of their block or the coherent phase pattern of the old state.
+    """
+    old_summary = json.loads((Path(warm_path).parent / "summary.json").read_text())
+    old_blocks = [(b["species"], int(b["kappa"]), [int(n) for n in b["principals"]])
+                  for b in old_summary["canonical_space"]["blocks"]]
+    state = warm["model_state"]
+    new_state = network.state_dict()
+    old_kappa_offset = -min(-7, min(k for _, k, _ in old_blocks))
+    copied = {name: value.clone() for name, value in new_state.items()}
+    for name in new_state:
+        if name.startswith("radial_encoder.") or name == "species_embedding.weight":
+            if state[name].shape == new_state[name].shape:
+                copied[name] = state[name]
+            else:
+                # A wider radial feature basis: the trained weights act on the
+                # old features and the new input columns start at zero, so
+                # the network output is unchanged at the start.
+                widened = torch.zeros_like(new_state[name])
+                widened[:, : state[name].shape[1]] = state[name]
+                copied[name] = widened
+    kappa_rows = new_state["kappa_embedding.weight"].clone()
+    for kappa in {k for _, k, _ in old_blocks}:
+        kappa_rows[kappa + network.kappa_offset] = state["kappa_embedding.weight"][kappa + old_kappa_offset]
+    copied["kappa_embedding.weight"] = kappa_rows
+    principal_rows = new_state["principal_embedding.weight"].clone()
+    old_principal = state["principal_embedding.weight"]
+    principal_rows[: old_principal.shape[0]] = old_principal[: principal_rows.shape[0]]
+    copied["principal_embedding.weight"] = principal_rows
+    old_head, old_index = {}, 0
+    for species, kappa, principals in old_blocks:
+        for column, principal in enumerate(principals):
+            old_head[(species, kappa, principal)] = (old_index, column)
+            old_index += 1
+    old_block_index = {(sp, k): i for i, (sp, k, _) in enumerate(old_blocks)}
+    old_signs = warm.get("pair_signs")
+    # Global orientation of the old signs relative to the coherent pattern.
+    orientation = 1.0
+    if old_signs is not None:
+        votes = sum(float(old_signs[i][c]) * (-1) ** (abs(k) - 1)
+                    for i, (_, k, ps) in enumerate(old_blocks) for c in range(len(ps)))
+        orientation = 1.0 if votes >= 0 else -1.0
+    head_index = 0
+    matched = added = 0
+    clipped_logits = []
+    with torch.no_grad():
+        for b, spec in enumerate(backend.block_specs):
+            species = "n" if spec.species_sign > 0 else "p"
+            ob = old_block_index.get((species, spec.kappa))
+            dilation = new_state[f"blocks.{b}.raw_dilation"].clone()
+            logits = torch.full_like(network.occupation_logits[b], new_logit)
+            signs = backend.pair_signs[b].clone()
+            for column, principal in enumerate(spec.principals):
+                key = (species, spec.kappa, principal)
+                if key in old_head:
+                    oi, oc = old_head[key]
+                    for part in ("weight", "bias"):
+                        copied[f"output_heads.{head_index}.{part}"] = state[f"output_heads.{oi}.{part}"]
+                    dilation[column] = state[f"blocks.{ob}.raw_dilation"][oc]
+                    logits[column] = state[f"occupation_logits.{ob}"][oc]
+                    if old_signs is not None:
+                        signs[column] = old_signs[ob][oc]
+                    matched += 1
+                else:
+                    if ob is not None and old_signs is not None:
+                        signs[column] = torch.sign(old_signs[ob].sum()) or old_signs[ob][0]
+                    else:
+                        signs[column] = orientation * (-1) ** (abs(spec.kappa) - 1)
+                    added += 1
+                head_index += 1
+            copied[f"blocks.{b}.raw_dilation"] = dilation
+            clipped_logits.append(logits)
+            backend.pair_signs[b] = signs.to(backend.device)
+        # Occupations are v^2 = sigmoid(t + mu) with the particle-number shift
+        # mu, so the clip acts on t + mu (clipping t itself would move the
+        # whole configuration whenever |mu| is large).
+        shifts = backend.occupation_state(clipped_logits).shifts
+        for b, (spec, logits) in enumerate(zip(backend.block_specs, clipped_logits)):
+            mu = shifts["n" if spec.species_sign > 0 else "p"]
+            copied[f"occupation_logits.{b}"] = (logits + mu).clamp(-logit_clip, logit_clip) - mu
+    network.load_state_dict(copied, strict=True)
+    return {"matched_states": matched, "added_states": added, "sign_orientation": orientation}
+
+
 def build_network(backend: SphericalRHFBBackend, config: RHFBTrainingConfig) -> CanonicalHFBNet:
     return CanonicalHFBNet(
         torch.as_tensor(backend.r, dtype=torch.float64, device=backend.device),
@@ -166,6 +260,8 @@ def save_result(out: Path, backend: SphericalRHFBBackend, network: CanonicalHFBN
         "canonical_space": {"extra_capacity": backend.extra_capacity,
                             "capacities": backend.capacities,
                             "kappa_limits": list(backend.kappa_limits),
+                            "min_states_per_kappa": backend.min_states_per_kappa,
+                            "pair_sign_init": backend.pair_sign_init,
                             "blocks": [
                                 {"species": "n" if s.species_sign > 0 else "p", "kappa": s.kappa,
                                  "principals": list(s.principals)} for s in backend.block_specs]},
@@ -250,7 +346,12 @@ def train_rhfb(backend: SphericalRHFBBackend, config: RHFBTrainingConfig, out_di
     network = build_network(backend, config)
     if config.initial_model and not config.resume:
         warm = torch.load(config.initial_model, map_location=backend.device, weights_only=False)
-        network.load_state_dict(warm["model_state"])
+        if set(warm["model_state"]) == set(network.state_dict()) and all(
+                warm["model_state"][k].shape == v.shape for k, v in network.state_dict().items()):
+            network.load_state_dict(warm["model_state"])
+        else:
+            info = _load_mapped_warm_start(network, backend, warm, Path(config.initial_model))
+            print(f"mapped warm start from {config.initial_model}: {info}", flush=True)
     logit_ids = {id(p) for p in network.occupation_logits}
     optimizer = torch.optim.Adam([
         {"params": [p for p in network.parameters() if id(p) not in logit_ids],
